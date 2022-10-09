@@ -1,0 +1,52 @@
+{
+  "name": "web-analyst",
+  "version": "1.5.4",
+  "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
+  "main": "index.cjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@my-centos-server.com:thimpat/node-statistics.git"
+  },
+  "keywords": [
+    "tracking",
+    "system",
+    "statistics",
+    "visits",
+    "number",
+    "of",
+    "visitors",
+    "web analyzer",
+    "web analytics",
+    "web analyst"
+  ],
+  "author": "Patrice THIMOTHEE <thimpat@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^1.0.2",
+    "datatables.net": "^1.10.10",
+    "datatables.net-autofill-bs": "^2.0.0",
+    "handlebars": "^4.0.4",
+    "jquery": "^2.1.4",
+    "jsonfile": "^6.1.0",
+    "querystring": "^0.2.0",
+    "ua-parser-js": "^0.7.9",
+    "uuid": "^2.0.1"
+  },
+  "browser": {
+    "Chartjs": "./node_modules/chart.js/Chart.js"
+  },
+  "style": [
+    "./public/css/style.css"
+  ],
+  "devDependencies": {
+    "bootstrap": "^3.3.5",
+    "eslint": "^8.25.0",
+    "gulp": "^3.9.0",
+    "gulp-inline": "^0.1.0",
+    "gulp-rename": "^1.2.2",
+    "jquery": "^2.1.4"
+  }
+}
