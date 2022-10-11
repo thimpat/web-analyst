@@ -28,11 +28,7 @@
   "dependencies": {
     "@thimpat/libutils": "^1.12.2",
     "chart.js": "^1.1.1",
-    "datatables.net": "^1.10.10",
-    "datatables.net-autofill-bs": "^2.0.0",
-    "handlebars": "^4.0.4",
-    "jquery": "^2.1.4",
-    "jsonfile": "^6.1.0",
+    "tabulator-tables": "^5.4.1",
     "ua-parser-js": "^0.7.9"
   },
   "browser": {
@@ -46,7 +42,6 @@
     "eslint": "^8.25.0",
     "gulp": "^3.9.0",
     "gulp-inline": "^0.1.0",
-    "gulp-rename": "^1.2.2",
-    "jquery": "^2.1.4"
+    "gulp-rename": "^1.2.2"
   }
 }
