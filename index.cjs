@@ -5,161 +5,34 @@ const path = require("path");
 const url = require("url");
 const http = require("http");
 
-const {readFile} = require("fs");
-const handlebars = require("handlebars");
-const jsonEngine = require("jsonfile");
+const {createWriteStream, mkdirSync} = require("fs");
 const {StatsEngine} = require("./stats-engine.cjs");
-
-
-let jsonfile;
-let firstRequest = true;
+const {joinPath} = require("@thimpat/libutils");
 
 const all = [];
 
 let statsEngine = new StatsEngine();
 
-let
-    reqOptions,
-    indexPath,
-    statsPage;
-
-jsonEngine.spaces = 4;
-
-indexPath = path.join(__dirname, "public");
-statsPage = "stats.hbs";
-
-reqOptions = {
-    root    : indexPath,
-    dotfiles: "allow",
-    headers : {
-        "x-timestamp": Date.now(),
-        "x-sent"     : true
-    }
-};
+let stream = null;
 
 
-/**
- * @todo Precompile
- * @param source
- * @param data
- * @returns {*}
- */
-function renderToString(source, data)
-{
-    let template,
-        outputString;
-
-    template = handlebars.compile(source);
-    outputString = template(data);
-
-    return outputString;
-}
-
-function renderView(view, data, cb)
-{
-    let content;
-
-    // read the file and use the callback to render the view
-    readFile(__dirname + "/views/" + view, function (err, source)
-    {
-        if (!err)
-        {
-            source = source.toString();
-            content = renderToString(source, data);
-            cb(content);
-        }
-        else
-        {
-            //res.end('Internal error.');
-            cb("Internal error");
-        }
-    });
-}
-
-/**
- * Display the page containing the stats
- * @returns {Function}
- */
-function renderData(req, res)
+function addToFile(all)
 {
     try
     {
-        // Client is asking for data
-        if (req.url === "/z1")
-        {
-            jsonfile = statsEngine.getDatafile();
-            jsonEngine.readFile(jsonfile, function (err, data)
-            {
-                if (err)
-                {
-                    console.error(err);
-                    res.end("Something went wrong");
-                    return;
-                }
-
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify(data));
-            });
-            return;
-        }
-
-        // Client is asking for data
-        if (req.url === "/z2")
-        {
-            jsonfile = statsEngine.getOtherDatafile();
-            jsonEngine.readFile(jsonfile, function (err, data)
-            {
-                if (err)
-                {
-                    console.error(err);
-                    res.end("Something went wrong");
-                    return;
-                }
-
-                data.referers = data.referers || {};
-
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify(data.referers));
-            });
-            return;
-        }
-
-        // Client is asking for data
-        if (req.url === "/z3")
-        {
-            jsonfile = statsEngine.getOtherDatafile();
-            jsonEngine.readFile(jsonfile, function (err, data)
-            {
-                if (err)
-                {
-                    console.error(err);
-                    res.end("Something went wrong");
-                    return;
-                }
-
-                data.keywords = data.keywords || {};
-                
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify(data.keywords));
-            });
-            return;
-        }
-
-        // Show stats page
-        renderView(statsPage, {}, function (content)
-        {
-            res.write(content);
-            res.end();
-        });
+        const data = all.join("\n");
+        stream.write(data + "\n");
+        all.length = 0;
 
         return true;
     }
     catch (e)
     {
-        console.error({lid: 5453}, e.message);
+        console.error({lid: 2451}, e.message);
     }
 
     return false;
+
 }
 
 /**
@@ -172,38 +45,44 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
     {
         let stats;
 
-        if (firstRequest)
-        {
-            firstRequest = false;
-        }
-
         const infoReq = url.parse(req.url, true);
 
+        for (let k in headers)
+        {
+            headers[k] = headers[k] || "";
+        }
+
+        for (let k in infoReq)
+        {
+            infoReq[k] = infoReq[k] || "";
+        }
+
+        let now = new Date();
+        let today = now.toISOString().slice(0, 10);
+        let time = now.toLocaleTimeString();
         stats = {
-            headers       : headers,
-            host          : headers.host,
-            referer       : headers.referer,
-            useragent     : headers["user-agent"],
-            acceptlanguage: headers["accept-language"],
-            cookie        : headers.cookie,
-            url           : req.url,
-            method        : req.method,
-            ip,
-            hostname      : headers.host,
-            params        : {
-                query : infoReq.query,
-                search: infoReq.search
-            },
-            path          : infoReq.pathname,
-            query         : infoReq.query,
-            // search        : infoReq.search,
-            // route         : req.route,
+            date: today.padEnd(12) + time.padEnd(10),
+            ip  : ("" + ip).padEnd(16),
+            acceptLanguage: ("" + headers["accept-language"]).padEnd(60),
+            // accept        : ("" + headers.accept).padEnd(80),
+            // acceptEncoding: ("" + headers["accept-encoding"]).padEnd(16),
+            // hostname      : ("" + headers.host).padEnd(20),
+            // cacheControl  : ("" + headers["cache-control"]).padEnd(20),
+            // url           : req.url.padEnd(20),
+            userAgent: ("" + headers["user-agent"]).padEnd(120),
+            // host          : ("" + headers.host).padEnd(20),
+            path: infoReq.pathname.padEnd(40),
+            search   : ("" + infoReq.search).padEnd(20),
+            // method        : req.method.padEnd(5),
         };
 
-        statsEngine.parseData(stats);
+        const line = Object.values(stats);
+        const str = line.join("  |  ");
 
-        // @todo: Remove stats from memory :/
-        all.push(stats);
+        all.push(str);
+
+        // If not busy
+        addToFile(all);
 
         return true;
     }
@@ -215,24 +94,22 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
     return false;
 }
 
-
 /**
- * Set up the engine
- * @param params
+ * GenServe message handler
+ * @param action
+ * @param req
+ * @param res
+ * @param headers
+ * @param connection
+ * @param socket
+ * @param data
+ * @param extraData
+ * @param ip
+ * @returns {boolean}
  */
-function init(params = {
-    ignoreIPs       : ["192.168.x.x"],
-    ignoreRoutes    : ["/stats", "favicon"],
-    ignoreExtensions: [".map"],
-    dataDir         : "./"
-})
+function onGenserveMessage({action, req, res, headers, connection, socket, data, extraData, ip})
 {
-    params = params || {};
-    statsEngine.setOptions(params);
-}
-
-process.on("message",
-    ({action, req, res, headers, connection, socket, data, extraData, ip}) =>
+    try
     {
         if (action === "request")
         {
@@ -240,16 +117,68 @@ process.on("message",
 
             trackData(req, res, {headers, connection, socket, ip, data, extraData});
         }
-    });
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2125}, e.message);
+    }
+
+    return false;
+}
+
+function startServer()
+{
+    http.createServer(function (req, res)
+    {
+
+        res.write("Hello World!");
+        res.end();
+
+    }).listen(8080);
+}
+
+/**
+ * Set up the engine
+ */
+function init(server = "my-server", classname = "web")
+{
+    try
+    {
+        const dataDir = joinPath(process.cwd(), `${server}.${classname}`);
+
+        mkdirSync(dataDir, {recursive: true});
+        const dataPath = joinPath(dataDir, "my-server.log");
+        stream = createWriteStream(dataPath, {flags: "a"});
+
+        // Intercept message sent by GenServe
+        process.on("message", onGenserveMessage);
 
 
-module.exports.init = init;
+        startServer();
 
-http.createServer(function (req, res) {
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2189}, e.message);
+    }
 
-    renderData(req, res);
+    return false;
 
-    // res.write("Hello World!");
-    // res.end();
+}
 
-}).listen(8080);
+(async function ()
+{
+    try
+    {
+        init();
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2315}, e.message);
+    }
+
+    return false;
+}());

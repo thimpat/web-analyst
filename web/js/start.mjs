@@ -1,11 +1,13 @@
-import {generateLineChart} from "./chart-generator.mjs";
+import {generateBarChart, generateDataTables, generateLineChart} from "./chart-generator.mjs";
+
 
 
 const init = () =>
 {
     try
     {
-        const elem = document.getElementById("myChart");
+        const $lineChart = document.getElementById("myChart1");
+        const $barChart = document.getElementById("myChart2");
 
         const labels = [
             "January",
@@ -16,9 +18,26 @@ const init = () =>
             "June",
         ];
 
+        const options = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : "Chart.js Bar Chart"
+                }
+            }
+        };
+
         const data = [0, 10, 5, 2, 20, 30, 45];
 
-        generateLineChart(elem, {labels, data});
+        generateLineChart($lineChart, {title: "My First dataset", labels, data, options});
+        generateBarChart($barChart, {title: "My Second dataset", labels, data, options});
+
+        // Data Tables
+        generateDataTables();
 
         return true;
     }
