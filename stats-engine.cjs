@@ -21,30 +21,17 @@ let
     colours,
     highlight,
     nColours,
-    defaultOptions,
     processTimerTxt,
     saveData,
-    data2Convert,
-    dataForCharts,
-    dirty,
-    debugMode,
-    testMode,
     maxPopular,
-    resetDatafile1,
-    resetDatafile2,
     words,
     sentence;
 
 
 processTimerTxt = "Analyst generation";
-dirty = true;
 
 maxPopular = 8;
 
-resetDatafile1 = pathEngine.join(__dirname, "/data/reset/data-visitors-to-convert.json");
-resetDatafile2 = pathEngine.join(__dirname, "/data/reset/data-for-charts.json");
-
-// Testing mode only
 sentence = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
     " incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis " +
     " exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure" +
@@ -59,16 +46,6 @@ parser = new UAParser();
 jsonEngine.spaces = 4;
 ipVisitors = {};
 
-defaultOptions = {
-    ignoreIPs       : [],
-    ignoreRoutes    : [],
-    ignoreExtensions: [],
-    dataDir         : __dirname,
-    route           : "stats",
-    testMode        : false,
-    debugMode       : false
-};
-
 routeVisitors = {};
 browserVisitors = {};
 osVisitors = {};
@@ -81,28 +58,51 @@ nColours = colours.length;
 
 class StatsEngine
 {
+    userOptions = {
+        testMode : false,
+        debugMode: false
+    };
+
+    defaultOptions = {
+        ignoreIPs       : [],
+        ignoreRoutes    : [],
+        ignoreExtensions: [],
+        dataDir         : __dirname,
+        route           : "stats",
+        testMode        : false,
+        debugMode       : false
+    };
+
+    resetDatafile1 = pathEngine.join(__dirname, "/data/reset/data-visitors-to-convert.json");
+    resetDatafile2 = pathEngine.join(__dirname, "/data/reset/data-for-charts.json");
+
+    dirty = true;
+
+    data2Convert = null;
+    dataForCharts = null;
+
     constructor()
     {
-        testMode = this.userOptions.testMode;
-        debugMode = this.userOptions.debugMode;
+        this.setOptions();
+
+        this.testMode = this.userOptions.testMode;
+        this.debugMode = this.userOptions.debugMode;
 
         lastDayIndex = this.getIndexDay();
         lastWeekIndex = this.getIndexWeek();
 
         if (!existsSync(this.userOptions.datafile1))
         {
-            createReadStream(resetDatafile1).pipe(createWriteStream(this.userOptions.datafile1));
+            createReadStream(this.resetDatafile1).pipe(createWriteStream(this.userOptions.datafile1));
         }
 
         if (!existsSync(this.userOptions.datafile2))
         {
-            createReadStream(resetDatafile2).pipe(createWriteStream(this.userOptions.datafile2));
+            createReadStream(this.resetDatafile2).pipe(createWriteStream(this.userOptions.datafile2));
         }
 
         // Start gathering information
         this.startDataAnalyser(
-            this.userOptions.datafile1,
-            this.userOptions.datafile2,
             this.userOptions.frequency
         );
     }
@@ -110,23 +110,23 @@ class StatsEngine
     /**
      * Initialize data
      */
-    startDataAnalyser(dataVisitorsToConvertPath, dataForChartsPath, frequency)
+    startDataAnalyser(frequency)
     {
         frequency = frequency || 10000;
 
         // Load data from data file 1: /data/data-visitors-to-convert.json
-        jsonEngine.readFile(dataVisitorsToConvertPath, {}, function (err, dataGroup1)
+        jsonEngine.readFile(this.userOptions.datafile1, {}, (err, dataGroup1) =>
         {
             if (err)
             {
-                console.error("Cannot read data file =>", dataVisitorsToConvertPath);
+                console.error("Cannot read data file =>", this.userOptions.datafile1);
                 return;
             }
 
-            data2Convert = dataGroup1;
+            this.data2Convert = dataGroup1;
 
             // Load data from data file 2: /data/data-for-charts.json
-            jsonEngine.readFile(dataForChartsPath, {}, function (err, dataGroup2)
+            jsonEngine.readFile(this.userOptions.datafile2, {}, (err, dataGroup2) =>
             {
                 if (err)
                 {
@@ -134,15 +134,15 @@ class StatsEngine
                     return;
                 }
 
-                dataForCharts = dataGroup2;
+                this.dataForCharts = dataGroup2;
 
                 // Save data to file
                 saveData = function ()
                 {
-                    if (dirty)
+                    if (this.dirty)
                     {
                         // Update visitors file: data/data-visitors-to-convert.json
-                        jsonEngine.writeFile(dataVisitorsToConvertPath, data2Convert, function (err)
+                        jsonEngine.writeFile(this.userOptions.datafile1, this.data2Convert, (err) =>
                         {
                             if (err)
                             {
@@ -151,7 +151,7 @@ class StatsEngine
                             }
 
                             // Update stats file: data/data-for-charts.json
-                            jsonEngine.writeFile(dataForChartsPath, dataForCharts, function (err)
+                            jsonEngine.writeFile(this.userOptions.datafile2, this.dataForCharts, (err) =>
                             {
                                 if (err)
                                 {
@@ -159,7 +159,7 @@ class StatsEngine
                                     return;
                                 }
 
-                                if (debugMode)
+                                if (this.debugMode)
                                 {
                                     console.log("data saved");
                                 }
@@ -170,16 +170,16 @@ class StatsEngine
                     setTimeout(function ()
                     {
                         saveData();
-                        dirty = false;
-                    }, frequency);
-                };
+                        this.dirty = false;
+                    }.bind(this), frequency);
+
+                }.bind(this);
 
                 saveData();
 
             });
 
         });
-
     };
 
     getIndexDay()
@@ -207,7 +207,7 @@ class StatsEngine
         weekStart = 1;
         now = new Date();
         januaryFirst = new Date(now.getFullYear(), 0, 1);
-        if (weekStart !== undefined && (typeof weekStart !== "number" || weekStart % 1 !== 0 || weekStart < 0 || weekStart > 6))
+        if (typeof weekStart !== "number" || weekStart % 1 !== 0 || weekStart < 0 || weekStart > 6)
         {
             throw new Error("Wrong argument. Must be an integer between 0 and 6.");
         }
@@ -298,10 +298,9 @@ class StatsEngine
         return vArr;
     }
 
-    setOptions(opt)
+    setOptions(opt = {})
     {
-        opt = opt || {};
-        this.userOptions = Object.assign({}, defaultOptions, opt);
+        this.userOptions = Object.assign({}, this.defaultOptions, opt);
 
         this.userOptions.datafile1 = pathEngine.join(this.userOptions.dataDir, "/web-analys1.json");
         this.userOptions.datafile2 = pathEngine.join(this.userOptions.dataDir, "/web-analys2.json");
@@ -339,18 +338,18 @@ class StatsEngine
             }
         }
 
-        data2Convert.referers = data2Convert.referers || {};
+        this.data2Convert.referers = this.data2Convert.referers || {};
 
-        if (!data2Convert.referers[referrer])
+        if (!this.data2Convert.referers[referrer])
         {
-            data2Convert.referers[referrer] = 1;
+            this.data2Convert.referers[referrer] = 1;
         }
         else
         {
-            ++data2Convert.referers[referrer];
+            ++this.data2Convert.referers[referrer];
         }
 
-        if (debugMode)
+        if (this.debugMode)
         {
             console.log("hostname is:", host);
             console.log("referer detected:", referrer);
@@ -365,7 +364,7 @@ class StatsEngine
     clearWeekChart()
     {
         let i, n, weekData;
-        weekData = dataForCharts.weekVisitors.datasets[0].data;
+        weekData = this.dataForCharts.weekVisitors.datasets[0].data;
         n = weekData.length;
         for (i = 0; i < n; ++i)
         {
@@ -411,7 +410,7 @@ class StatsEngine
         t = Object.keys(data).length;
         if (t >= maxPopular)
         {
-            vArr = getMaxValues(maxPopular, data);
+            vArr = this.getMaxValues(maxPopular, data);
 
             for (k in data)
             {
@@ -426,7 +425,7 @@ class StatsEngine
         }
 
         c = 0;
-        dataForCharts[keyName] = [];
+        this.dataForCharts[keyName] = [];
         for (key in data)
         {
             item = {};
@@ -434,7 +433,7 @@ class StatsEngine
             item.highlight = highlight[c % nColours];
             item.label = key;
             item.value = data[key];
-            dataForCharts[keyName][c] = item;
+            this.dataForCharts[keyName][c] = item;
             ++c;
         }
     }
@@ -442,27 +441,27 @@ class StatsEngine
     updateWeekChart()
     {
         let indexLabel, data;
-        indexLabel = getIndexDay();
+        indexLabel = this.getIndexDay();
 
-        data = dataForCharts.weekVisitors.datasets[0].data;
+        data = this.dataForCharts.weekVisitors.datasets[0].data;
         ++data[indexLabel];
     }
 
     updateYearChart()
     {
         let indexLabel, data;
-        indexLabel = getIndexMonth();
+        indexLabel = this.getIndexMonth();
 
-        data = dataForCharts.yearVisitors.datasets[0].data;
+        data = this.dataForCharts.yearVisitors.datasets[0].data;
         ++data[indexLabel];
     }
 
     updateProgressVisitors()
     {
         let currentMonthIndex;
-        currentMonthIndex = getIndexMonth();
-        dataForCharts.progressVisitors.datasets[0].data =
-            dataForCharts.yearVisitors.datasets[0].data.slice(0, currentMonthIndex + 1);
+        currentMonthIndex = this.getIndexMonth();
+        this.dataForCharts.progressVisitors.datasets[0].data =
+            this.dataForCharts.yearVisitors.datasets[0].data.slice(0, currentMonthIndex + 1);
     }
 
     updateBrowserPopularityChart()
@@ -485,20 +484,17 @@ class StatsEngine
         this.popularityChart("topRoutes", routeVisitors);
     }
 
-    updateDataForCharts(dataVisitor)
+    updateDataForCharts({ipVisitor})
     {
         let indexDay,
             indexWeek,
             indexMonth,
             itsaNewMonth,
             itsaNewDay,
-            itsaNewWeek,
-            ipVisitor;
-
-        ipVisitor = dataVisitor.ip;
+            itsaNewWeek;
 
         // New day?
-        indexDay = getIndexDay();
+        indexDay = this.getIndexDay();
         if (lastDayIndex !== indexDay)
         {
             lastDayIndex = indexDay;
@@ -506,10 +502,10 @@ class StatsEngine
         }
 
         // New week?
-        indexWeek = getIndexWeek();
+        indexWeek = this.getIndexWeek();
         if (indexWeek !== lastWeekIndex)
         {
-            if (debugMode)
+            if (this.debugMode)
             {
                 console.log("-----------------------------------------------------");
                 console.log("New week detected");
@@ -520,7 +516,7 @@ class StatsEngine
         }
 
         // New month?
-        indexMonth = getIndexMonth();
+        indexMonth = this.getIndexMonth();
         if (lastMonthIndex !== indexMonth)
         {
             lastMonthIndex = indexMonth;
@@ -529,12 +525,12 @@ class StatsEngine
 
         if (itsaNewDay)
         {
-            this.newDay(dataForCharts);
+            this.newDay(this.dataForCharts);
         }
 
         if (itsaNewWeek)
         {
-            this.newWeek(dataForCharts);
+            this.newWeek(this.dataForCharts);
         }
 
         if (itsaNewMonth)
@@ -561,259 +557,266 @@ class StatsEngine
         return randWord;
     }
 
-    updateData2Convert(dataVisitor)
+    updateData2Convert({ip: ipVisitor, params, url, useragent, acceptlanguage, host, headers})
     {
-        let sameVisitor,
-            browserName,
-            referrer,
-            osName,
-            uaInfo,
-            ipVisitor,
-            routeVisitor,
-            userAgent,
-            langInfo,
-            k,
-            keyword,
-            host;
-
-        dirty = true;
-
-        ipVisitor = dataVisitor.ip;
-
-        // Generate fake IP in test mode
-        if (testMode)
+        try
         {
-            dataVisitor.ip =
+            let sameVisitor,
+                browserName,
+                referrer,
+                osName,
+                uaInfo,
+                routeVisitor,
+                userAgent,
+                langInfo,
+                k,
+                keyword;
+
+            dirty = true;
+
+            // Generate fake IP in test mode
+            if (this.testMode)
+            {
                 ipVisitor =
                     Math.floor(Math.random() * 256) + "." +
                     Math.floor(Math.random() * 256) + "." +
                     Math.floor(Math.random() * 256) + "." +
                     Math.floor(Math.random() * 256);
 
-            dataVisitor.params.query = {
-                "a": this.generateRandom()
-            };
-        }
-        routeVisitor = dataVisitor.url;
-        userAgent = dataVisitor.useragent;
-        langInfo = dataVisitor.acceptlanguage;
+                params.query = {
+                    "a": this.generateRandom()
+                };
+            }
+            routeVisitor = url;
+            userAgent = useragent;
+            langInfo = acceptlanguage;
 
-        host = dataVisitor.host;
-        referrer = dataVisitor.headers.referer;
+            host = host;
+            referrer = headers.referer;
 
-        // --------------------------------------
-        // data/data-visitors-to-convert.json => visitorsInfoData
-        // --------------------------------------
-        ipVisitors = data2Convert.ips;
-        routeVisitors = data2Convert.routes;
-        browserVisitors = data2Convert.browsers;
-        osVisitors = data2Convert.os;
-        langVisitors = data2Convert.lang;
-        keywordsVisitors = data2Convert.keywords;
+            // --------------------------------------
+            // data/data-visitors-to-convert.json => visitorsInfoData
+            // --------------------------------------
+            ipVisitors = this.data2Convert.ips;
+            routeVisitors = this.data2Convert.routes;
+            browserVisitors = this.data2Convert.browsers;
+            osVisitors = this.data2Convert.os;
+            langVisitors = this.data2Convert.lang;
+            keywordsVisitors = this.data2Convert.keywords;
 
-        // Same visitor?
-        sameVisitor = ipVisitors[ipVisitor];
-        if (sameVisitor)
-        {
-            ++ipVisitors[ipVisitor];
-        }
-        else
-        {
-            ipVisitors[ipVisitor] = 1;
-        }
-
-        // Store routes
-        if (!routeVisitors[routeVisitor])
-        {
-            routeVisitors[routeVisitor] = 1;
-        }
-        else
-        {
-            ++routeVisitors[routeVisitor];
-        }
-
-
-        // More infos...
-        uaInfo = parser.setUA(userAgent).getResult();
-
-        browserName = uaInfo.browser.name + " " + uaInfo.browser.version;
-        osName = uaInfo.os.name + " " + uaInfo.os.version;
-
-        // Store browser info
-        if (!browserVisitors[browserName])
-        {
-            browserVisitors[browserName] = 1;
-        }
-        else
-        {
-            ++browserVisitors[browserName];
-        }
-
-        // Store O.S. info
-        if (!osVisitors[osName])
-        {
-            osVisitors[osName] = 1;
-        }
-        else
-        {
-            ++osVisitors[osName];
-        }
-
-        // Store language info
-        if (!langVisitors[langInfo])
-        {
-            langVisitors[langInfo] = 1;
-        }
-        else
-        {
-            ++langVisitors[langInfo];
-        }
-
-        // Store keywords info
-        if (dataVisitor.params && dataVisitor.params.query)
-        {
-            for (k in dataVisitor.params.query)
+            // Same visitor?
+            sameVisitor = ipVisitors[ipVisitor];
+            if (sameVisitor)
             {
-                keyword = dataVisitor.params.query[k];
-                // Store referrers info
-                if (!keywordsVisitors[keyword])
+                ++ipVisitors[ipVisitor];
+            }
+            else
+            {
+                ipVisitors[ipVisitor] = 1;
+            }
+
+            // Store routes
+            if (!routeVisitors[routeVisitor])
+            {
+                routeVisitors[routeVisitor] = 1;
+            }
+            else
+            {
+                ++routeVisitors[routeVisitor];
+            }
+
+
+            // More infos...
+            uaInfo = parser.setUA(userAgent).getResult();
+
+            browserName = uaInfo.browser.name + " " + uaInfo.browser.version;
+            osName = uaInfo.os.name + " " + uaInfo.os.version;
+
+            // Store browser info
+            if (!browserVisitors[browserName])
+            {
+                browserVisitors[browserName] = 1;
+            }
+            else
+            {
+                ++browserVisitors[browserName];
+            }
+
+            // Store O.S. info
+            if (!osVisitors[osName])
+            {
+                osVisitors[osName] = 1;
+            }
+            else
+            {
+                ++osVisitors[osName];
+            }
+
+            // Store language info
+            if (!langVisitors[langInfo])
+            {
+                langVisitors[langInfo] = 1;
+            }
+            else
+            {
+                ++langVisitors[langInfo];
+            }
+
+            // Store keywords info
+            if (params && params.query)
+            {
+                for (k in params.query)
                 {
-                    keywordsVisitors[keyword] = 1;
-                }
-                else
-                {
-                    ++keywordsVisitors[keyword];
+                    keyword = params.query[k];
+                    // Store referrers info
+                    if (!keywordsVisitors[keyword])
+                    {
+                        keywordsVisitors[keyword] = 1;
+                    }
+                    else
+                    {
+                        ++keywordsVisitors[keyword];
+                    }
                 }
             }
+
+            // Store referrers info
+            this.storeReferrer(referrer, host);
+
+            this.updateDataForCharts({ipVisitor});
+
+            return true;
+        }
+        catch (e)
+        {
+            console.error({lid: 4541}, e.message);
         }
 
-        // Store referrers info
-        this.storeReferrer(referrer, host);
+        return false;
 
-        this.updateDataForCharts(dataVisitor);
     }
 
-    parse(dataVisitor)
+    parseData({ip, url, headers, referer, host, acceptlanguage, useragent, params})
     {
-        let i,
-            n,
-            ipVisitor,
-            routeVisitor,
-            acceptHeader,
-            referer,
-            host;
-
-        if (debugMode)
+        try
         {
-            console.time(processTimerTxt);
-        }
+            let i,
+                n,
+                ipVisitor,
+                routeVisitor,
+                acceptHeader;
 
-        if (!dataVisitor)
-        {
-            console.error("Data visitor empty");
-            return;
-        }
-
-        if (!dataForCharts)
-        {
-            console.error("Datafile is invalid or empty");
-            return;
-        }
-
-        ipVisitor = dataVisitor.ip;
-        routeVisitor = dataVisitor.url;
-        acceptHeader = dataVisitor.headers.accept;
-        referer = dataVisitor.referer;
-        host = dataVisitor.host;
-
-        // We store referer no matter what
-        this.storeReferrer(referer, host);
-
-        // --------------------------------------
-        //
-        // --------------------------------------
-        if (!data2Convert)
-        {
-            data2Convert = {};
-        }
-
-        // TODO: Replace these with a merge
-        data2Convert.ips = data2Convert.ips || {};
-        data2Convert.routes = data2Convert.routes || {};
-        data2Convert.browsers = data2Convert.browsers || {};
-        data2Convert.lang = data2Convert.lang || {};
-        data2Convert.os = data2Convert.os || {};
-        data2Convert.assets = data2Convert.assets || {};
-        data2Convert.referers = data2Convert.referers || {};
-        data2Convert.keywords = data2Convert.keywords || {};
-
-
-        // --------------------------------------
-        // Case to ignore
-        // --------------------------------------
-        if (acceptHeader.indexOf("text/html") === -1)
-        {
-            if (debugMode)
+            if (this.debugMode)
             {
-                console.log("Ignoring header: ", acceptHeader);
+                console.time(processTimerTxt);
             }
 
-            if (!data2Convert.assets[routeVisitor])
+            if (!this.dataForCharts)
             {
-                data2Convert.assets[routeVisitor] = 0;
+                console.error("Datafile is invalid or empty");
+                return;
             }
-            data2Convert.assets[routeVisitor]++;
-            return;
-        }
 
-        // Ignore list: routes
-        n = this.userOptions.ignoreRoutes.length;
-        for (i = 0; i < n; ++i)
-        {
-            if (routeVisitor.indexOf(this.userOptions.ignoreRoutes[i]) >= 0)
+            ipVisitor = ip;
+            routeVisitor = url;
+            acceptHeader = headers.accept;
+
+            // We store referer no matter what
+            this.storeReferrer(referer, host);
+
+            // --------------------------------------
+            //
+            // --------------------------------------
+            if (!this.data2Convert)
             {
-                if (debugMode)
+                this.data2Convert = {};
+            }
+
+            // TODO: Replace these with a merge
+            this.data2Convert.ips = this.data2Convert.ips || {};
+            this.data2Convert.routes = this.data2Convert.routes || {};
+            this.data2Convert.browsers = this.data2Convert.browsers || {};
+            this.data2Convert.lang = this.data2Convert.lang || {};
+            this.data2Convert.os = this.data2Convert.os || {};
+            this.data2Convert.assets = this.data2Convert.assets || {};
+            this.data2Convert.referers = this.data2Convert.referers || {};
+            this.data2Convert.keywords = this.data2Convert.keywords || {};
+
+
+            // --------------------------------------
+            // Case to ignore
+            // --------------------------------------
+            if (acceptHeader.indexOf("text/html") === -1)
+            {
+                if (this.debugMode)
                 {
-                    console.log("Ignoring route: ", this.userOptions.ignoreRoutes[i]);
+                    console.log("Ignoring header: ", acceptHeader);
                 }
-                return;
-            }
-        }
 
-        n = this.userOptions.ignoreIPs.length;
-        for (i = 0; i < n; ++i)
-        {
-            if (ipVisitor.indexOf(this.userOptions.ignoreIPs[i]) >= 0)
-            {
-                if (debugMode)
+                if (!this.data2Convert.assets[routeVisitor])
                 {
-                    console.log("Ignoring IP: ", this.userOptions.ignoreIPs[i]);
+                    this.data2Convert.assets[routeVisitor] = 0;
                 }
+                this.data2Convert.assets[routeVisitor]++;
                 return;
             }
-        }
 
-        n = this.userOptions.ignoreExtensions.length;
-        for (i = 0; i < n; ++i)
-        {
-            if (routeVisitor.indexOf(this.userOptions.ignoreExtensions[i]) >= 0)
+            // Ignore list: routes
+            n = this.userOptions.ignoreRoutes.length;
+            for (i = 0; i < n; ++i)
             {
-                return;
+                if (routeVisitor.indexOf(this.userOptions.ignoreRoutes[i]) >= 0)
+                {
+                    if (this.debugMode)
+                    {
+                        console.log("Ignoring route: ", this.userOptions.ignoreRoutes[i]);
+                    }
+                    return;
+                }
             }
-        }
 
-        if (debugMode)
+            n = this.userOptions.ignoreIPs.length;
+            for (i = 0; i < n; ++i)
+            {
+                if (ipVisitor.indexOf(this.userOptions.ignoreIPs[i]) >= 0)
+                {
+                    if (this.debugMode)
+                    {
+                        console.log("Ignoring IP: ", this.userOptions.ignoreIPs[i]);
+                    }
+                    return;
+                }
+            }
+
+            n = this.userOptions.ignoreExtensions.length;
+            for (i = 0; i < n; ++i)
+            {
+                if (routeVisitor.indexOf(this.userOptions.ignoreExtensions[i]) >= 0)
+                {
+                    return;
+                }
+            }
+
+            if (this.debugMode)
+            {
+                console.log("Accepting header: ", acceptHeader, " => ", routeVisitor);
+            }
+
+            this.updateData2Convert({ip, params, url, useragent, acceptlanguage, host, headers});
+
+            if (this.debugMode)
+            {
+                console.timeEnd(processTimerTxt);
+            }
+
+            return true;
+        }
+        catch (e)
         {
-            console.log("Accepting header: ", acceptHeader, " => ", routeVisitor);
+            console.error({lid: 6543}, e.message);
         }
 
-        this.updateData2Convert(dataVisitor);
-
-        if (debugMode)
-        {
-            console.timeEnd(processTimerTxt);
-        }
-
+        return false;
     }
 
 }
