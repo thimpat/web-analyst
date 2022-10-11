@@ -1,30 +1,50 @@
 /**
  * Created by thimpat on 04/11/2015.
  */
+const path = require("path");
+const url = require("url");
+const http = require("http");
+
 const {readFile} = require("fs");
-const qs = require("querystring");
-const uuid = require("uuid");
 const handlebars = require("handlebars");
 const jsonEngine = require("jsonfile");
-const path = require("path");
 const {StatsEngine} = require("./stats-engine.cjs");
 
+
 let jsonfile;
+let firstRequest = true;
+
+const all = [];
+
 let statsEngine = new StatsEngine();
 
-/**
- * Set up the engine. Make files available through Express
- * @param params
- */
-module.exports.init = function (params)
-{
-    params = params || {};
-    statsEngine.setOptions(params);
-    statsEngine.init();
+let
+    reqOptions,
+    indexPath,
+    statsPage;
+
+jsonEngine.spaces = 4;
+
+indexPath = path.join(__dirname, "public");
+statsPage = "stats.hbs";
+
+reqOptions = {
+    root    : indexPath,
+    dotfiles: "allow",
+    headers : {
+        "x-timestamp": Date.now(),
+        "x-sent"     : true
+    }
 };
 
 
-module.exports.renderToString = function (source, data)
+/**
+ * @todo Precompile
+ * @param source
+ * @param data
+ * @returns {*}
+ */
+function renderToString(source, data)
 {
     let template,
         outputString;
@@ -33,12 +53,10 @@ module.exports.renderToString = function (source, data)
     outputString = template(data);
 
     return outputString;
-};
+}
 
-
-module.exports.renderView = function (view, data, cb)
+function renderView(view, data, cb)
 {
-    const self = this;
     let content;
 
     // read the file and use the callback to render the view
@@ -47,171 +65,27 @@ module.exports.renderView = function (view, data, cb)
         if (!err)
         {
             source = source.toString();
-            content = self.renderToString(source, data);
+            content = renderToString(source, data);
             cb(content);
         }
         else
         {
-            //res.send('Internal error.');
+            //res.end('Internal error.');
             cb("Internal error");
         }
     });
-};
-
-/**
- * Check user credential.
- * @param post Form data coming from post request
- * @param cb Callback to be called when all checking are done
- */
-module.exports.login = function (post, cb)
-{
-    let users,
-        user,
-        loginOk,
-        i,
-        message;
-
-    // Client is trying to login
-    users = statsEngine.getUsers();
-    if (users.length)
-    {
-        loginOk = false;
-        for (i = 0; i < users.length; ++i)
-        {
-            user = users[i];
-            console.log(user);
-
-            if (post.username === user.username && post.password === user.password)
-            {
-                loginOk = true;
-                message = "Success";
-                break;
-            }
-        }
-
-        if (!loginOk)
-        {
-            message = "Wrong credential";
-        }
-    }
-    else
-    {
-        // No users defined, login is always okay
-        loginOk = true;
-        message = "Success";
-    }
-
-    cb(loginOk, message);
-};
-
-module.exports.check = function ()
-{
-    const self = this;
-    let noCheck;
-
-    return function (req, res, next)
-    {
-        // If no users are defined, just skip this check
-        noCheck = !statsEngine.getUsers().length;
-        if (noCheck)
-        {
-            next();
-            return;
-        }
-
-        if (req.query.logout)
-        {
-            if (req.session)
-            {
-                req.session.web_analyst_user_id = null;
-                self.renderView(loginPage,
-                    {message: ""},
-                    function (content)
-                    {
-                        res.send(content);
-                    });
-            }
-
-            return;
-        }
-
-        // http://stackoverflow.com/questions/4295782/how-do-you-extract-post-data-in-node-js
-        if (req.method === "POST")
-        {
-            let body = "";
-
-            req.on("data", function (data)
-            {
-                body += data;
-
-                // Too much POST data, kill the connection!
-                // 1e6 === 1 * Math.pow(10, 6) === 1 * 1000000 ~~~ 1MB
-                if (body.length > 1e6)
-                {
-                    req.connection.destroy();
-                }
-            });
-
-            req.on("end", function ()
-            {
-                let post;
-                post = qs.parse(body);
-                self.login(post, function (loggedIn, message)
-                {
-                    if (!loggedIn)
-                    {
-                        self.renderView(loginPage, {message: message}, function (content)
-                        {
-                            res.send(content);
-                        });
-                        return;
-                    }
-
-                    req.session.web_analyst_user_id = uuid.v4();
-                    // Fix this redirection
-                    // res.redirect('');
-
-                    // Show stats page
-                    self.renderView(statsPage, {}, function (content)
-                    {
-                        res.send(content);
-                    });
-
-                });
-            });
-
-            return;
-        }
-
-        if (!req.session || !req.session.web_analyst_user_id)
-        {
-            self.renderView(loginPage,
-                {message: ""},
-                function (content)
-                {
-                    res.send(content);
-                });
-
-            return;
-        }
-
-        next();
-
-    };
-};
+}
 
 /**
  * Display the page containing the stats
  * @returns {Function}
  */
-module.exports.render = function ()
+function renderData(req, res)
 {
-    const self = this;
-
-    return function (req, res)
+    try
     {
         // Client is asking for data
-        if (req.query.data === "z1")
+        if (req.url === "/z1")
         {
             jsonfile = statsEngine.getDatafile();
             jsonEngine.readFile(jsonfile, function (err, data)
@@ -219,17 +93,18 @@ module.exports.render = function ()
                 if (err)
                 {
                     console.error(err);
-                    res.send("Something went wrong");
+                    res.end("Something went wrong");
                     return;
                 }
 
-                res.json(data);
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(data));
             });
             return;
         }
 
         // Client is asking for data
-        if (req.query.data === "z2")
+        if (req.url === "/z2")
         {
             jsonfile = statsEngine.getOtherDatafile();
             jsonEngine.readFile(jsonfile, function (err, data)
@@ -237,18 +112,20 @@ module.exports.render = function ()
                 if (err)
                 {
                     console.error(err);
-                    res.send("Something went wrong");
+                    res.end("Something went wrong");
                     return;
                 }
 
                 data.referers = data.referers || {};
-                res.json(data.referers);
+
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(data.referers));
             });
             return;
         }
 
         // Client is asking for data
-        if (req.query.data === "z3")
+        if (req.url === "/z3")
         {
             jsonfile = statsEngine.getOtherDatafile();
             jsonEngine.readFile(jsonfile, function (err, data)
@@ -256,106 +133,123 @@ module.exports.render = function ()
                 if (err)
                 {
                     console.error(err);
-                    res.send("Something went wrong");
+                    res.end("Something went wrong");
                     return;
                 }
 
                 data.keywords = data.keywords || {};
-                res.json(data.keywords);
+                
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(data.keywords));
             });
             return;
         }
 
         // Show stats page
-        self.renderView(statsPage, {}, function (content)
+        renderView(statsPage, {}, function (content)
         {
-            res.send(content);
+            res.write(content);
+            res.end();
         });
 
-    };
-};
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 5453}, e.message);
+    }
+
+    return false;
+}
 
 /**
  * Harvest data
  * @returns {Function}
  */
-module.exports.track = function ()
+function trackData(req, res, {headers = {}, connection = {}, socket = {}, data = {}, extraData = {}, ip} = {})
 {
-    let firstRequest;
-    firstRequest = true;
-    return function (req, res, next)
+    try
     {
-        let stats,
-            ip;
+        let stats;
 
         if (firstRequest)
         {
             firstRequest = false;
         }
 
-        ip = req.headers["x-forwarded-for"] ||
-            req.connection.remoteAddress ||
-            req.socket.remoteAddress ||
-            req.connection.socket.remoteAddress;
+        const infoReq = url.parse(req.url, true);
 
         stats = {
-            headers       : req.headers,
-            host          : req.headers.host,
-            referer       : req.headers.referer,
-            useragent     : req.headers["user-agent"],
-            acceptlanguage: req.headers["accept-language"],
-            cookie        : req.headers.cookie,
+            headers       : headers,
+            host          : headers.host,
+            referer       : headers.referer,
+            useragent     : headers["user-agent"],
+            acceptlanguage: headers["accept-language"],
+            cookie        : headers.cookie,
             url           : req.url,
             method        : req.method,
-            ip            : ip,
-            ip2           : req.ip,
-            hostname      : req.hostname,
-            originalUrl   : req.originalUrl,
-            params        : req.params,
-            path          : req.path,
-            protocol      : req.protocol,
-            query         : req.query,
-            route         : req.route,
-            secure        : req.secure,
-            signedCookie  : req.signedCookie,
-            subDomains    : req.subdomains,
-            xhr           : req.xhr
+            ip,
+            hostname      : headers.host,
+            params        : {
+                query : infoReq.query,
+                search: infoReq.search
+            },
+            path          : infoReq.pathname,
+            query         : infoReq.query,
+            // search        : infoReq.search,
+            // route         : req.route,
         };
 
-        statsEngine.parse(stats);
+        statsEngine.parseData(stats);
+
+        // @todo: Remove stats from memory :/
         all.push(stats);
 
-        next();
-    };
-};
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 5441}, e.message);
+    }
 
-function init()
-{
-    "use strict";
-    let
-        all,
-        reqOptions,
-        indexPath,
-        statsPage,
-        loginPage;
-
-    jsonEngine.spaces = 4;
-
-    all = [];
-
-    indexPath = path.join(__dirname, "public");
-    statsPage = "stats.hbs";
-    loginPage = "login.hbs";
-
-    reqOptions = {
-        root    : indexPath,
-        dotfiles: "allow",
-        headers : {
-            "x-timestamp": Date.now(),
-            "x-sent"     : true
-        }
-    };
-
+    return false;
 }
 
-init();
+
+/**
+ * Set up the engine
+ * @param params
+ */
+function init(params = {
+    ignoreIPs       : ["192.168.x.x"],
+    ignoreRoutes    : ["/stats", "favicon"],
+    ignoreExtensions: [".map"],
+    dataDir         : "./"
+})
+{
+    params = params || {};
+    statsEngine.setOptions(params);
+}
+
+process.on("message",
+    ({action, req, res, headers, connection, socket, data, extraData, ip}) =>
+    {
+        if (action === "request")
+        {
+            data = data || {};
+
+            trackData(req, res, {headers, connection, socket, ip, data, extraData});
+        }
+    });
+
+
+module.exports.init = init;
+
+http.createServer(function (req, res) {
+
+    renderData(req, res);
+
+    // res.write("Hello World!");
+    // res.end();
+
+}).listen(8080);
