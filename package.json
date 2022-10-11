@@ -25,15 +25,14 @@
   "author": "Patrice THIMOTHEE <thimpat@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "chart.js": "^1.0.2",
+    "@thimpat/libutils": "^1.12.2",
+    "chart.js": "^1.1.1",
     "datatables.net": "^1.10.10",
     "datatables.net-autofill-bs": "^2.0.0",
     "handlebars": "^4.0.4",
     "jquery": "^2.1.4",
     "jsonfile": "^6.1.0",
-    "querystring": "^0.2.0",
-    "ua-parser-js": "^0.7.9",
-    "uuid": "^2.0.1"
+    "ua-parser-js": "^0.7.9"
   },
   "browser": {
     "Chartjs": "./node_modules/chart.js/Chart.js"
