@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "to-esm constants.cjs --output ./web/js",
-    "run:stats": "npm run build && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables"
+    "build:all": "to-esm constants.cjs --output ./web/js && to-esm lib/common.cjs --output ./web/js",
+    "run:stats": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables"
   },
   "repository": {
     "type": "git",
