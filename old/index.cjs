@@ -245,11 +245,3 @@ process.on("message",
 
 module.exports.init = init;
 
-http.createServer(function (req, res) {
-
-    renderData(req, res);
-
-    // res.write("Hello World!");
-    // res.end();
-
-}).listen(8080);
