@@ -1,6 +1,6 @@
 {
   "name": "web-analyst",
-  "version": "1.5.4",
+  "version": "2.0.0",
   "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
   "main": "index.cjs",
   "scripts": {
