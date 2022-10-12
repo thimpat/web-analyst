@@ -5,7 +5,7 @@ const url = require("url");
 const http = require("http");
 
 const {readFileSync, writeFileSync, createWriteStream} = require("fs");
-const {buildServerLogDir, getHitLogsPath, TABLE_SEPARATOR, buildTodayJsonFile, buildHitsData,
+const {buildServerLogDir, getHitLogsPath, TABLE_SEPARATOR, updateVisitorsJsonFile, buildHitsData,
     buildIpFile
 } = require("./lib/core.cjs");
 
@@ -148,7 +148,7 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
         addToHitFile(hits);
 
         buildHitsData();
-        buildTodayJsonFile();
+        updateVisitorsJsonFile();
 
         return true;
     }
