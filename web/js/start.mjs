@@ -1,16 +1,8 @@
 import {
-    generateBarChart,
-    generateDataTables,
-    generatePieChart,
-    getData
-} from "./chart-generator.mjs";
-import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
-import {
-    buildBrowserPopularityPie,
     buildDataTable,
-    buildLanguagePie, buildVisitorDay,
+    buildVisitorDay,
     buildVisitorsYear,
-    buildVisitorWeek
+    buildVisitorsWeek
 } from "./elt-views.mjs";
 
 const init = async () =>
@@ -27,12 +19,12 @@ const init = async () =>
         // ------------------------------------------------
         // Visitor per week
         // ------------------------------------------------
-        buildVisitorWeek();
+        await buildVisitorsWeek();
 
         // ------------------------------------------------
         // Visitor per month
         // ------------------------------------------------
-        buildVisitorsYear();
+        await buildVisitorsYear();
 
         // // ------------------------------------------------
         // // Browsers
@@ -74,5 +66,4 @@ const init = async () =>
     }
 
     return false;
-
 }());
