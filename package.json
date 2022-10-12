@@ -28,7 +28,7 @@
   "author": "Patrice THIMOTHEE <thimpat@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@thimpat/libutils": "^1.12.2",
+    "@thimpat/libutils": "^1.13.0",
     "chart.js": "^1.1.1",
     "tabulator-tables": "^5.4.1",
     "ua-parser-js": "^0.7.9"
