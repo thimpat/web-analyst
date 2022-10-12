@@ -15,5 +15,44 @@ body
     margin-bottom: 50px;
     margin-top: 50px;
   }
+}
 
+/*Theme the Tabulator element*/
+#example-table-theme
+{
+  background-color: #b4b5d999;
+  border: 1px solid #333;
+  border-radius: 0;
+
+  input[type="text"]
+  {
+    background-color: #e0e0ec2e;
+    border: 1px solid #0000001f;
+  }
+
+  .tabulator-header
+  {
+    background-color: #333;
+    color: #fff;
+  }
+
+  /*Allow column header names to wrap lines*/
+  .tabulator-header .tabulator-col,
+  .tabulator-header .tabulator-col-row-handle
+  {
+    white-space: normal;
+  }
+
+  /*Color the table rows*/
+  .tabulator-tableHolder .tabulator-table .tabulator-row
+  {
+    color: #fff;
+    background-color: #666;
+  }
+
+  /*Color even rows*/
+  .tabulator-tableHolder .tabulator-table .tabulator-row:nth-child(even)
+  {
+    background-color: #444;
+  }
 }

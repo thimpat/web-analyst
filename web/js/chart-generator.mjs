@@ -1,3 +1,5 @@
+import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
+
 export function generateGenericChart(elem, {
     type = "line",
     title = "Line Chart",
@@ -109,28 +111,96 @@ export function generateBarChart(elem, {
 
 }
 
-export function generateDataTables()
+export function generatePieChart(elem, {
+    title = "Pie Chart",
+    labels,
+    data = [],
+    options = {},
+    backgroundColor = [
+        "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
+        "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
+        "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
+    ],
+    borderColor = "rgb(76,87,134)",
+} = {})
 {
     try
     {
-        var table = new Tabulator("#example-table", {
-            height:"311px",
-            columns:[
-                {title:"Name", field:"name"},
-                {title:"Progress", field:"progress", sorter:"number"},
-                {title:"Gender", field:"gender"},
-                {title:"Rating", field:"rating"},
-                {title:"Favourite Color", field:"col"},
-                {title:"Date Of Birth", field:"dob", hozAlign:"center"},
-            ],
+        const myChart = generateGenericChart(elem, {
+            title,
+            data,
+            labels,
+            type: "pie",
+            options,
+            backgroundColor,
+            borderColor
         });
-        return true;
+
+        return myChart;
+    }
+    catch (e)
+    {
+        console.error({lid: 2111}, e.message);
+    }
+
+    return null;
+
+}
+
+export function generateDataTables(elem, {data = []} = {})
+{
+    try
+    {
+        for (let i = 0; i < data.length; ++i)
+        {
+            const line = data[i];
+            line.id = i;
+        }
+
+        const table = new Tabulator("#example-table", {
+            height       : 320,
+            persistence  : {
+                sort   : true,
+                filter : true,
+                columns: true,
+            },
+            clipboard:true,
+            movableRows:true,
+            movableColumns: true,
+            persistenceID: "examplePerststance",
+            // layout            : "fitColumns",
+            resizableColumnFit: true,
+            data,
+            autoColumns       : true,
+            placeholder       : "Awaiting Data, Please Load File"
+        });
+
+        return table;
     }
     catch (e)
     {
         console.error({lid: 2143}, e.message);
     }
 
-    return false;
+    return null;
 
 }
+
+export const getData = async function (endPoint)
+{
+    let result;
+    try
+    {
+        const url = "./" + endPoint;
+        const response = await fetch(url);
+        result = await response.json();
+    }
+    catch (e)
+    {
+        console.error({lid: 2983}, e.message);
+    }
+
+    return result;
+};
+
+
