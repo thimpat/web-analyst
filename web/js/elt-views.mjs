@@ -6,15 +6,35 @@ export const buildVisitorDay = function ()
 {
     try
     {
-        const data = [0, 10, 5, 2, 20, 30, 45];
+        // Build datasets
+        const data1 = [0, 10, 5, 2, 20, 30, 45];
+        const data2 = [10, 5, 2, 20, 30, 45, 50];
 
+        const datasets = [
+            {
+                label          : "Visitors unique",
+                backgroundColor: "rgb(180,181,217)",
+                borderColor    : "rgb(76,87,134)",
+                data           : data1,
+            },
+            {
+                label          : "Visits",
+                backgroundColor: "rgb(188,217,180)",
+                borderColor    : "rgb(76,134,123)",
+                data           : data2,
+            },
+        ];
 
-        const labelHours = [];
+        // Build labels
+        const labels = [];
         for (let i = 0; i < 24; ++i)
         {
-            labelHours.push(i + "h");
+            labels.push(i + "h");
         }
 
+        const data = {labels, datasets};
+
+        // Build DOM element
         const $barChart1 = document.getElementById("visitorHours");
         const options1 = {
             responsive: true,
@@ -26,12 +46,19 @@ export const buildVisitorDay = function ()
                     display: true,
                     text   : "Today"
                 }
+            },
+            scales    : {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                }
             }
         };
 
         generateBarChart($barChart1, {
             title          : "Visitor per hour",
-            labels         : labelHours,
             data,
             options        : options1,
             backgroundColor: "rgb(180,181,217)",
@@ -165,8 +192,8 @@ export const buildBrowserPopularityPie = function ()
             }
         };
         generatePieChart($barChart4, {
-            title          : "Visitor per month", labels: labelsBrowsers, data, options: options4,
-            borderColor    : "transparent",
+            title      : "Visitor per month", labels: labelsBrowsers, data, options: options4,
+            borderColor: "transparent",
         });
 
         return true;
@@ -204,8 +231,8 @@ export const buildLanguagePie = function ()
             }
         };
         generatePieChart($barChart5, {
-            title          : "Languages", labels: labelsLanguages, data, options: options5,
-            borderColor    : "transparent",
+            title      : "Languages", labels: labelsLanguages, data, options: options5,
+            borderColor: "transparent",
         });
 
         return true;

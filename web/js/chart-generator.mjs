@@ -13,21 +13,14 @@ export function generateGenericChart(elem, {
 {
     try
     {
-        const dataChart = {
-            labels  : labels,
-            datasets: [
-                {
-                    label: title,
-                    backgroundColor,
-                    borderColor,
-                    data,
-                }
-            ]
-        };
+        // const dataChart = {
+        //     labels  : labels,
+        //     datasets
+        // };
 
         const config = {
             type,
-            data: dataChart,
+            data,
             options
         };
 
@@ -81,7 +74,6 @@ export function generateLineChart(elem, {
 
 export function generateBarChart(elem, {
     title = "Line Chart",
-    labels,
     data = [],
     options = {},
     backgroundColor = "rgb(180,181,217)",
@@ -93,7 +85,6 @@ export function generateBarChart(elem, {
         const myChart = generateGenericChart(elem, {
             title,
             data,
-            labels,
             type: "bar",
             options,
             backgroundColor,
