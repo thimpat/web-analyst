@@ -3,9 +3,11 @@
   "version": "2.0.0",
   "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
   "main": "index.cjs",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "run:stats": "npx --yes genserve@latest restart stats.project --dir web --port 8080 --dir node_modules --blockmode"
+    "build": "to-esm constants.cjs --output ./web/js",
+    "run:stats": "npm run build && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables"
   },
   "repository": {
     "type": "git",
