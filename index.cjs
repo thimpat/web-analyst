@@ -5,15 +5,13 @@ const url = require("url");
 const http = require("http");
 
 const {readFileSync, writeFileSync, createWriteStream} = require("fs");
-const {buildServerLogDir, getHitLogsPath, getIpLogsPath, TABLE_SEPARATOR, buildTodayData, buildHitsData} = require("./lib/core.cjs");
-
-
+const {buildServerLogDir, getHitLogsPath, TABLE_SEPARATOR, buildTodayJsonFile, buildHitsData,
+    buildIpFile
+} = require("./lib/core.cjs");
 
 const hits = [];
-let ips = new Set();
 
 let hitsLogStream = null;
-let ipsLogStream = null;
 
 function addToHitFile(all)
 {
@@ -22,28 +20,6 @@ function addToHitFile(all)
         const data = all.join("\n");
         hitsLogStream.write(data + "\n");
         all.length = 0;
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 2451}, e.message);
-    }
-
-    return false;
-}
-
-function addToIpFile(ip)
-{
-    try
-    {
-        if (ips.has(ip))
-        {
-            return false;
-        }
-
-        ips.add(ip);
-        ipsLogStream.write(ip + "\n");
 
         return true;
     }
@@ -171,10 +147,8 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
         // If not busy
         addToHitFile(hits);
 
-        addToIpFile(ip);
-
         buildHitsData();
-        buildTodayData();
+        buildTodayJsonFile();
 
         return true;
     }
@@ -209,14 +183,12 @@ function onGenserveMessage({action, req, res, headers, connection, socket, data,
 
             trackData(req, res, {headers, connection, socket, ip, data, extraData});
         }
-        return true;
     }
     catch (e)
     {
         console.error({lid: 2125}, e.message);
     }
 
-    return false;
 }
 
 function startServer()
@@ -240,6 +212,9 @@ function init(server = "my-server", namespace = "web")
         // Create directory for server
         buildServerLogDir(server, namespace);
 
+        // Create ip log file
+        buildIpFile();
+
         // Create hits.log
         const hitsLogPath = getHitLogsPath();
 
@@ -256,12 +231,7 @@ function init(server = "my-server", namespace = "web")
 
         hitsLogStream = createWriteStream(hitsLogPath, {flags: "a"});
 
-        // Create ips.log
-        const ipsLogPath = getIpLogsPath();
-        ips.add(...content.split("\n"));
-        ipsLogStream = createWriteStream(ipsLogPath, {flags: "a"});
-
-        // Set a listener on Genserve
+        // Set a listener on Genserve events
         process.on("message", onGenserveMessage);
 
         return true;
