@@ -12,7 +12,9 @@ export const MEANINGFUL_LOG_FILES  = {
 
 export const MEANINGFUL_DATA_FILES  = {
     HITS_DATA_PATH: "hits.json",
-    TODAY_DATA_PATH: "today.json"
+    TODAY_DATA_PATH: "today.json",
+    WEEK_DATA_PATH: "week.json",
+    YEAR_DATA_PATH: "year.json",
 };
 
 

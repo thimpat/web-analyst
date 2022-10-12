@@ -4,7 +4,19 @@
  * @see [./lib/common.cjs]{@link ./lib/common.cjs}
  * 
  **/
-export const get24HoursLables  = function ()
+export const getTodayDate  = function()
+{
+    let now = new Date();
+    return now.toISOString().slice(0, 10);
+};
+
+export const getCurrentTime  = function()
+{
+    let now = new Date();
+    return now.toLocaleTimeString();
+};
+
+export const get24HoursLabels  = function ()
 {
     // Build labels
     const labels = [];
@@ -15,5 +27,22 @@ export const get24HoursLables  = function ()
 
     return labels;
 };
+
+export const getWeekLabel  = function ()
+{
+    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+};
+
+export const getYearLabels  = function ()
+{
+    return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+};
+
+// Date and Time strings
+
+
+
+// Labels
+
 
 
