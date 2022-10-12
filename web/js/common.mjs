@@ -4,6 +4,8 @@
  * @see [./lib/common.cjs]{@link ./lib/common.cjs}
  * 
  **/
+
+
 export const getTodayDate  = function()
 {
     let now = new Date();
@@ -38,11 +40,19 @@ export const getYearLabels  = function ()
     return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 };
 
+export const getYearFilename  = () =>
+{
+    return (new Date()).getFullYear() + ".json";
+};
+
+
 // Date and Time strings
 
 
 
 // Labels
+
+
 
 
 

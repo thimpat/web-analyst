@@ -1,5 +1,3 @@
-import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
-
 export function generateGenericChart(elem, {
     type = "line",
     title = "Line Chart",
