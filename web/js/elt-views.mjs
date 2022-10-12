@@ -2,11 +2,13 @@ import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
 import {generateBarChart, generateDataTables, generatePieChart, getData} from "./chart-generator.mjs";
 
 
-export const buildVisitorDay = async function ()
+export const buildVisitorChart = async function (dataPath, {
+    $chart, style1, style2, title, subTitle
+})
 {
     try
     {
-        const jsonData = await getData(MEANINGFUL_DATA_FILES.TODAY_DATA_PATH);
+        const jsonData = await getData(dataPath);
 
         // Build datasets
         const {dataVisitors, dataUniqueVisitors} = jsonData;
@@ -14,15 +16,13 @@ export const buildVisitorDay = async function ()
         const datasets = [
             {
                 label          : "Visitors unique",
-                backgroundColor: "rgb(180,181,217)",
-                borderColor    : "rgb(76,87,134)",
                 data           : dataUniqueVisitors,
+                ...style1,
             },
             {
                 label          : "Visits",
-                backgroundColor: "rgb(188,217,180)",
-                borderColor    : "rgb(76,134,123)",
                 data           : dataVisitors,
+                ...style2,
             },
         ];
 
@@ -32,7 +32,6 @@ export const buildVisitorDay = async function ()
         const data = {labels, datasets};
 
         // Build DOM element
-        const $barChart1 = document.getElementById("visitorHours");
         const options1 = {
             responsive: true,
             plugins   : {
@@ -41,7 +40,7 @@ export const buildVisitorDay = async function ()
                 },
                 title : {
                     display: true,
-                    text   : "Today"
+                    text   : title
                 }
             },
             scales    : {
@@ -54,8 +53,8 @@ export const buildVisitorDay = async function ()
             }
         };
 
-        generateBarChart($barChart1, {
-            title          : "Visitor per hour",
+        generateBarChart($chart, {
+            title          : subTitle,
             data,
             options        : options1,
             backgroundColor: "rgb(180,181,217)",
@@ -72,38 +71,57 @@ export const buildVisitorDay = async function ()
     return false;
 };
 
-export const buildVisitorWeek = function ()
+export const buildVisitorDay = async function ()
 {
     try
     {
-        const labelWeek = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ];
+        // Build DOM element
+        const $chart = document.getElementById("visitorHours");
 
-        const $barChart2 = document.getElementById("visitorsWeek");
-        const options2 = {
-            responsive: true,
-            plugins   : {
-                legend: {
-                    position: "top",
+        await buildVisitorChart(MEANINGFUL_DATA_FILES.TODAY_DATA_PATH,
+            {
+                $chart,
+                style1: {
+                    backgroundColor: "rgb(180,181,217)",
+                    borderColor    : "rgb(76,87,134)",
                 },
-                title : {
-                    display: true,
-                    text   : "This week"
-                }
-            }
-        };
-        generateBarChart($barChart2, {
-            title          : "Visitor per day", labels: labelWeek, data, options: options2,
-            backgroundColor: "rgb(195,180,217)",
-            borderColor    : "rgb(76,87,134)",
-        });
+                style2: {
+                    backgroundColor: "rgb(188,217,180)",
+                    borderColor    : "rgb(76,134,123)",
+                },
+                title: "Today",
+                subTitle: "Visitor per hour"
+            });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2437}, e.message);
+    }
+
+    return false;
+};
+
+export const buildVisitorWeek = async function ()
+{
+    try
+    {
+        const $chart = document.getElementById("visitorsWeek");
+        await buildVisitorChart(MEANINGFUL_DATA_FILES.WEEK_DATA_PATH,
+            {
+                $chart,
+                style1: {
+                    backgroundColor: "rgb(195,180,217)",
+                    borderColor    : "rgb(76,87,134)",
+                },
+                style2: {
+                    backgroundColor: "rgb(188,217,180)",
+                    borderColor    : "rgb(76,134,123)",
+                },
+                title: "This week",
+                subTitle: "Visitor per day"
+            });
 
         return true;
     }
@@ -115,43 +133,25 @@ export const buildVisitorWeek = function ()
     return false;
 };
 
-export const buildVisitorsYear = function ()
+export const buildVisitorsYear = async function ()
 {
     try
     {
-        const labelsMonths = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
-
-        const $barChart3 = document.getElementById("visitorsYear");
-        const options3 = {
-            responsive: true,
-            plugins   : {
-                legend: {
-                    position: "top",
+        const $chart = document.getElementById("visitorsYear");
+        await buildVisitorChart(MEANINGFUL_DATA_FILES.YEAR_DATA_PATH,
+            {
+                $chart,
+                style1: {
+                    backgroundColor: "rgb(195,180,217)",
+                    borderColor    : "rgb(76,87,134)",
                 },
-                title : {
-                    display: true,
-                    text   : "This year"
-                }
-            }
-        };
-        generateBarChart($barChart3, {
-            title          : "Visitor per month", labels: labelsMonths, data, options: options3,
-            backgroundColor: "rgb(217,190,180)",
-            borderColor    : "rgb(76,87,134)",
-        });
+                style2: {
+                    backgroundColor: "rgb(188,217,180)",
+                    borderColor    : "rgb(76,134,123)",
+                },
+                title: "This year",
+                subTitle: "Visitor per month"
+            });
 
         return true;
     }
