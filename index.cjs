@@ -4,11 +4,10 @@
 const url = require("url");
 const http = require("http");
 
-const {readFileSync, writeFileSync, createWriteStream, mkdirSync} = require("fs");
-const {joinPath} = require("@thimpat/libutils");
+const {readFileSync, writeFileSync, createWriteStream} = require("fs");
+const {buildServerLogDir, getHitLogsPath, getIpLogsPath, TABLE_SEPARATOR, buildTodayData, buildHitsData} = require("./lib/core.cjs");
 
 
-const TABLE_SEPARATOR = "  |  ";
 
 const hits = [];
 let ips = new Set();
@@ -174,6 +173,9 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
 
         addToIpFile(ip);
 
+        buildHitsData();
+        buildTodayData();
+
         return true;
     }
     catch (e)
@@ -231,41 +233,36 @@ function startServer()
 /**
  * Set up the engine
  */
-function init(server = "my-server", classname = "web")
+function init(server = "my-server", namespace = "web")
 {
     try
     {
         // Create directory for server
-        const dataDir = joinPath(process.cwd(), `${server}.${classname}`);
-        mkdirSync(dataDir, {recursive: true});
+        buildServerLogDir(server, namespace);
 
         // Create hits.log
-        const hitsLogPath = joinPath(dataDir, "hits.log");
+        const hitsLogPath = getHitLogsPath();
 
         let content = readFileSync(hitsLogPath, {encoding: "utf8"}) || "";
         const strCurrentTitles = content.split("\n")[0];
 
         const strTitles = getHeaders();
 
-        hitsLogStream = createWriteStream(hitsLogPath, {flags: "a"});
         if (strCurrentTitles !== strTitles)
         {
-            content = strTitles + content;
+            content = strTitles + "\n" + content + "\n";
             writeFileSync(hitsLogPath, content, {encoding: "utf8"});
-            hitsLogStream.write(strTitles + "\n");
         }
 
+        hitsLogStream = createWriteStream(hitsLogPath, {flags: "a"});
+
         // Create ips.log
-        const ipsLogPath = joinPath(dataDir, "ips.log");
+        const ipsLogPath = getIpLogsPath();
         ips.add(...content.split("\n"));
         ipsLogStream = createWriteStream(ipsLogPath, {flags: "a"});
 
-
         // Set a listener on Genserve
         process.on("message", onGenserveMessage);
-
-
-        // startServer();
 
         return true;
     }
