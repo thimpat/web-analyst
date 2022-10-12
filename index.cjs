@@ -265,7 +265,7 @@ function init(server = "my-server", classname = "web")
         process.on("message", onGenserveMessage);
 
 
-        startServer();
+        // startServer();
 
         return true;
     }
