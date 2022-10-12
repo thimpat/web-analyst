@@ -1,22 +1,10 @@
 import {generateBarChart, generateDataTables, generateLineChart} from "./chart-generator.mjs";
 
-
-
 const init = () =>
 {
     try
     {
         const $lineChart = document.getElementById("myChart1");
-        const $barChart = document.getElementById("myChart2");
-
-        const labels = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-        ];
 
         const options = {
             responsive: true,
@@ -33,8 +21,92 @@ const init = () =>
 
         const data = [0, 10, 5, 2, 20, 30, 45];
 
-        generateLineChart($lineChart, {title: "My First dataset", labels, data, options});
-        generateBarChart($barChart, {title: "My Second dataset", labels, data, options});
+        // generateLineChart($lineChart, {title: "My First dataset", labels, data, options});
+
+        // ------------------------------------------------
+        // Visitor per day
+        // ------------------------------------------------
+        const labelHours = [];
+        for (let i = 0; i < 24; ++i)
+        {
+            labelHours.push(i + "h");
+        }
+
+        const $barChart1 = document.getElementById("visitorHours");
+        const options1 = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : "Today"
+                }
+            }
+        };
+        generateBarChart($barChart1, {title: "Visitor per hour", labels: labelHours, data, options: options1});
+
+        // ------------------------------------------------
+        // Visitor per week
+        // ------------------------------------------------
+        const labelWeek = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ];
+
+        const $barChart2 = document.getElementById("visitorsWeek");
+        const options2 = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : "This week"
+                }
+            }
+        };
+        generateBarChart($barChart2, {title: "Visitor per day", labels: labelWeek, data, options: options2});
+
+        // ------------------------------------------------
+        // Visitor per month
+        // ------------------------------------------------
+        const labelsMonths = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+
+        const $barChart3 = document.getElementById("visitorsYear");
+        const options3 = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : "This year"
+                }
+            }
+        };
+        generateBarChart($barChart3, {title: "Visitor per month", labels: labelsMonths, data, options: options3});
 
         // Data Tables
         generateDataTables();

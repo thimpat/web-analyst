@@ -2,3 +2,18 @@ body
 {
   height: 100%;
 }
+
+.container
+{
+  display: block;
+  margin: auto;
+  min-width: 400px;
+  width: 60%;
+
+  .section
+  {
+    margin-bottom: 50px;
+    margin-top: 50px;
+  }
+
+}
