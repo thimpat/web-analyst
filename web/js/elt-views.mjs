@@ -1,5 +1,6 @@
 import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
 import {generateBarChart, generateDataTables, generatePieChart, getData} from "./chart-generator.mjs";
+import {getYearFilename} from "./common.mjs";
 
 
 export const buildVisitorChart = async function (dataPath, {
@@ -78,7 +79,7 @@ export const buildVisitorDay = async function ()
         // Build DOM element
         const $chart = document.getElementById("visitorHours");
 
-        await buildVisitorChart(MEANINGFUL_DATA_FILES.TODAY_DATA_PATH,
+        await buildVisitorChart(MEANINGFUL_DATA_FILES.TODAY_DATA_FILENAME,
             {
                 $chart,
                 style1: {
@@ -103,12 +104,12 @@ export const buildVisitorDay = async function ()
     return false;
 };
 
-export const buildVisitorWeek = async function ()
+export const buildVisitorsWeek = async function ()
 {
     try
     {
         const $chart = document.getElementById("visitorsWeek");
-        await buildVisitorChart(MEANINGFUL_DATA_FILES.WEEK_DATA_PATH,
+        await buildVisitorChart(MEANINGFUL_DATA_FILES.WEEK_DATA_FILENAME,
             {
                 $chart,
                 style1: {
@@ -138,7 +139,8 @@ export const buildVisitorsYear = async function ()
     try
     {
         const $chart = document.getElementById("visitorsYear");
-        await buildVisitorChart(MEANINGFUL_DATA_FILES.YEAR_DATA_PATH,
+        const yearFilename = getYearFilename();
+        await buildVisitorChart(yearFilename,
             {
                 $chart,
                 style1: {
@@ -247,7 +249,7 @@ export const buildDataTable = async function ()
     try
     {
         // Data
-        const dataTables = await getData(MEANINGFUL_DATA_FILES.HITS_DATA_PATH);
+        const dataTables = await getData(MEANINGFUL_DATA_FILES.HITS_DATA_FILENAME);
 
         //
         const table = generateDataTables("#example-table", {data: dataTables});
