@@ -2,35 +2,32 @@ import {MEANINGFUL_DATA_FILES} from "./constants.mjs";
 import {generateBarChart, generateDataTables, generatePieChart, getData} from "./chart-generator.mjs";
 
 
-export const buildVisitorDay = function ()
+export const buildVisitorDay = async function ()
 {
     try
     {
+        const jsonData = await getData(MEANINGFUL_DATA_FILES.TODAY_DATA_PATH);
+
         // Build datasets
-        const data1 = [0, 10, 5, 2, 20, 30, 45];
-        const data2 = [10, 5, 2, 20, 30, 45, 50];
+        const {dataVisitors, dataUniqueVisitors} = jsonData;
 
         const datasets = [
             {
                 label          : "Visitors unique",
                 backgroundColor: "rgb(180,181,217)",
                 borderColor    : "rgb(76,87,134)",
-                data           : data1,
+                data           : dataUniqueVisitors,
             },
             {
                 label          : "Visits",
                 backgroundColor: "rgb(188,217,180)",
                 borderColor    : "rgb(76,134,123)",
-                data           : data2,
+                data           : dataVisitors,
             },
         ];
 
         // Build labels
-        const labels = [];
-        for (let i = 0; i < 24; ++i)
-        {
-            labels.push(i + "h");
-        }
+        const labels = jsonData.labels || [];
 
         const data = {labels, datasets};
 
