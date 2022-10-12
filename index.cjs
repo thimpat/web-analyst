@@ -1,27 +1,27 @@
 /**
  * Created by thimpat on 04/11/2015.
  */
-const path = require("path");
 const url = require("url");
 const http = require("http");
 
-const {createWriteStream, mkdirSync} = require("fs");
-const {StatsEngine} = require("./stats-engine.cjs");
+const {readFileSync, writeFileSync, createWriteStream, mkdirSync} = require("fs");
 const {joinPath} = require("@thimpat/libutils");
 
-const all = [];
 
-let statsEngine = new StatsEngine();
+const TABLE_SEPARATOR = "  |  ";
 
-let stream = null;
+const hits = [];
+let ips = new Set();
 
+let hitsLogStream = null;
+let ipsLogStream = null;
 
-function addToFile(all)
+function addToHitFile(all)
 {
     try
     {
         const data = all.join("\n");
-        stream.write(data + "\n");
+        hitsLogStream.write(data + "\n");
         all.length = 0;
 
         return true;
@@ -32,8 +32,112 @@ function addToFile(all)
     }
 
     return false;
-
 }
+
+function addToIpFile(ip)
+{
+    try
+    {
+        if (ips.has(ip))
+        {
+            return false;
+        }
+
+        ips.add(ip);
+        ipsLogStream.write(ip + "\n");
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2451}, e.message);
+    }
+
+    return false;
+}
+
+const getStructure = function ({
+    ip = "",
+    acceptLanguage = "",
+    userAgent = "",
+    pathname = "",
+    search = ""
+} = {})
+{
+    const obj = {};
+
+    let now = new Date();
+    let today = now.toISOString().slice(0, 10);
+    let time = now.toLocaleTimeString();
+
+    if (ip)
+    {
+        // Formatted line
+        obj.date = today.padEnd(12) + time.padEnd(10);
+        obj.ip = ip.padEnd(20);
+        obj.acceptLanguage = acceptLanguage.padEnd(60);
+        obj.userAgent = userAgent.padEnd(120);
+        obj.pathname = pathname.padEnd(60);
+        obj.search = search.padEnd(80);
+    }
+    else
+    {
+        // Headers
+        obj.date = "date".padEnd(22);
+        obj.ip = "ip".padEnd(20);
+        obj.acceptLanguage = "acceptLanguage".padEnd(60);
+        obj.userAgent = "userAgent".padEnd(120);
+        obj.pathname = "pathname".padEnd(60);
+        obj.search = "search".padEnd(80);
+    }
+
+    return obj;
+};
+
+
+const getHeaders = function ()
+{
+    let strTitles;
+    try
+    {
+        const structure = getStructure();
+        const obj = Object.values(structure);
+
+        strTitles = obj.join(TABLE_SEPARATOR);
+    }
+    catch (e)
+    {
+        console.error({lid: 2555}, e.message);
+    }
+
+    return strTitles;
+};
+
+
+const getLineStats = function ({ip, acceptLanguage, userAgent, pathname, search})
+{
+    let strLine;
+    try
+    {
+        const obj = getStructure({
+            ip            : ip || "",
+            acceptLanguage: acceptLanguage || "",
+            userAgent     : userAgent || "",
+            pathname      : pathname || "",
+            search        : search || "",
+        });
+
+        const line = Object.values(obj);
+        strLine = line.join(TABLE_SEPARATOR);
+    }
+    catch (e)
+    {
+        console.error({lid: 2445}, e.message);
+    }
+
+    return strLine;
+};
+
 
 /**
  * Harvest data
@@ -43,8 +147,6 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
 {
     try
     {
-        let stats;
-
         const infoReq = url.parse(req.url, true);
 
         for (let k in headers)
@@ -57,32 +159,20 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
             infoReq[k] = infoReq[k] || "";
         }
 
-        let now = new Date();
-        let today = now.toISOString().slice(0, 10);
-        let time = now.toLocaleTimeString();
-        stats = {
-            date: today.padEnd(12) + time.padEnd(10),
-            ip  : ("" + ip).padEnd(16),
-            acceptLanguage: ("" + headers["accept-language"]).padEnd(60),
-            // accept        : ("" + headers.accept).padEnd(80),
-            // acceptEncoding: ("" + headers["accept-encoding"]).padEnd(16),
-            // hostname      : ("" + headers.host).padEnd(20),
-            // cacheControl  : ("" + headers["cache-control"]).padEnd(20),
-            // url           : req.url.padEnd(20),
-            userAgent: ("" + headers["user-agent"]).padEnd(120),
-            // host          : ("" + headers.host).padEnd(20),
-            path: infoReq.pathname.padEnd(40),
-            search   : ("" + infoReq.search).padEnd(20),
-            // method        : req.method.padEnd(5),
-        };
+        const lineStats = getLineStats({
+            ip            : ip,
+            acceptLanguage: headers["accept-language"],
+            userAgent     : headers["user-agent"],
+            pathname      : infoReq.pathname,
+            search        : infoReq.search,
+        });
 
-        const line = Object.values(stats);
-        const str = line.join("  |  ");
-
-        all.push(str);
+        hits.push(lineStats);
 
         // If not busy
-        addToFile(all);
+        addToHitFile(hits);
+
+        addToIpFile(ip);
 
         return true;
     }
@@ -145,13 +235,33 @@ function init(server = "my-server", classname = "web")
 {
     try
     {
+        // Create directory for server
         const dataDir = joinPath(process.cwd(), `${server}.${classname}`);
-
         mkdirSync(dataDir, {recursive: true});
-        const dataPath = joinPath(dataDir, "my-server.log");
-        stream = createWriteStream(dataPath, {flags: "a"});
 
-        // Intercept message sent by GenServe
+        // Create hits.log
+        const hitsLogPath = joinPath(dataDir, "hits.log");
+
+        let content = readFileSync(hitsLogPath, {encoding: "utf8"}) || "";
+        const strCurrentTitles = content.split("\n")[0];
+
+        const strTitles = getHeaders();
+
+        hitsLogStream = createWriteStream(hitsLogPath, {flags: "a"});
+        if (strCurrentTitles !== strTitles)
+        {
+            content = strTitles + content;
+            writeFileSync(hitsLogPath, content, {encoding: "utf8"});
+            hitsLogStream.write(strTitles + "\n");
+        }
+
+        // Create ips.log
+        const ipsLogPath = joinPath(dataDir, "ips.log");
+        ips.add(...content.split("\n"));
+        ipsLogStream = createWriteStream(ipsLogPath, {flags: "a"});
+
+
+        // Set a listener on Genserve
         process.on("message", onGenserveMessage);
 
 
@@ -173,12 +283,10 @@ function init(server = "my-server", classname = "web")
     try
     {
         init();
-        return true;
     }
     catch (e)
     {
         console.error({lid: 2315}, e.message);
     }
 
-    return false;
 }());
