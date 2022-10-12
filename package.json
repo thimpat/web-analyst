@@ -38,10 +38,7 @@
     "./public/css/style.css"
   ],
   "devDependencies": {
-    "bootstrap": "^3.3.5",
     "eslint": "^8.25.0",
-    "gulp": "^3.9.0",
-    "gulp-inline": "^0.1.0",
-    "gulp-rename": "^1.2.2"
+    "to-esm": "^2.24.1"
   }
 }
