@@ -2,7 +2,7 @@ import {
     buildDataTable,
     buildVisitorDay,
     buildVisitorsYear,
-    buildVisitorsWeek
+    buildVisitorsWeek, buildBrowserPopularityPie, buildLanguagePie
 } from "./elt-views.mjs";
 
 const init = async () =>
@@ -26,20 +26,20 @@ const init = async () =>
         // ------------------------------------------------
         await buildVisitorsYear();
 
-        // // ------------------------------------------------
-        // // Browsers
-        // // ------------------------------------------------
+        // ------------------------------------------------
+        // Browsers
+        // ------------------------------------------------
         // buildBrowserPopularityPie();
-        //
+
         // // ------------------------------------------------
         // // Language
         // // ------------------------------------------------
         // buildLanguagePie();
-
-        // ------------------------------------------------
-        // All data
-        // ------------------------------------------------
-        await buildDataTable();
+        //
+        // // ------------------------------------------------
+        // // All data
+        // // ------------------------------------------------
+        // await buildDataTable();
 
         return true;
     }

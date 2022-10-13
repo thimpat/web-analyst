@@ -177,7 +177,7 @@ export const buildBrowserPopularityPie = function ()
             "Safari"
         ];
 
-        const $barChart4 = document.getElementById("browser");
+        const $chart = document.getElementById("browser");
         const options4 = {
             responsive: true,
             plugins   : {
@@ -190,7 +190,7 @@ export const buildBrowserPopularityPie = function ()
                 }
             }
         };
-        generatePieChart($barChart4, {
+        generatePieChart($chart, {
             title      : "Visitor per month", labels: labelsBrowsers, data, options: options4,
             borderColor: "transparent",
         });
@@ -216,7 +216,7 @@ export const buildLanguagePie = function ()
             "ru",
         ];
 
-        const $barChart5 = document.getElementById("languages");
+        const $chart = document.getElementById("languages");
         const options5 = {
             responsive: true,
             plugins   : {
@@ -229,7 +229,7 @@ export const buildLanguagePie = function ()
                 }
             }
         };
-        generatePieChart($barChart5, {
+        generatePieChart($chart, {
             title      : "Languages", labels: labelsLanguages, data, options: options5,
             borderColor: "transparent",
         });
@@ -268,9 +268,9 @@ export const buildDataTable = async function ()
             const filterVal = fieldEl.options[fieldEl.selectedIndex].value;
             const typeVal = typeEl.options[typeEl.selectedIndex].value;
 
-            const filter = filterVal == "function" ? customFilter : filterVal;
+            const filter = filterVal === "function" ? customFilter : filterVal;
 
-            if (filterVal == "function")
+            if (filterVal === "function")
             {
                 typeEl.disabled = true;
                 valueEl.disabled = true;
