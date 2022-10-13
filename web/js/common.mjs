@@ -5,19 +5,24 @@
  * 
  **/
 
-
-export const getTodayDate  = function()
+// ---------------------------------------------------
+// Date and Time
+// ---------------------------------------------------
+export const getTodayDate  = function ()
 {
     let now = new Date();
     return now.toISOString().slice(0, 10);
 };
 
-export const getCurrentTime  = function()
+export const getCurrentTime  = function ()
 {
     let now = new Date();
     return now.toLocaleTimeString();
 };
 
+// ---------------------------------------------------
+// Labels
+// ---------------------------------------------------
 export const get24HoursLabels  = function ()
 {
     // Build labels
@@ -37,12 +42,33 @@ export const getWeekLabel  = function ()
 
 export const getYearLabels  = function ()
 {
-    return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ];
 };
 
+// ---------------------------------------------------
+// Utils
+// ---------------------------------------------------
 export const getYearFilename  = () =>
 {
     return (new Date()).getFullYear() + ".json";
+};
+
+export const fakeIp  = () =>
+{
+    return (Math.floor(Math.random() * 255) + 1) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255));
 };
 
 
@@ -51,6 +77,8 @@ export const getYearFilename  = () =>
 
 
 // Labels
+
+
 
 
 
