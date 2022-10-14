@@ -8,64 +8,42 @@
 // ---------------------------------------------------
 // Date and Time
 // ---------------------------------------------------
-export const getTodayDate  = function ()
+export const getTodayDate  = function (now = new Date())
 {
-    let now = new Date();
     return now.toISOString().slice(0, 10);
 };
 
-export const getCurrentTime  = function ()
+export const getCurrentTime  = function (now = new Date())
 {
-    let now = new Date();
     return now.toLocaleTimeString();
 };
 
-// ---------------------------------------------------
-// Labels
-// ---------------------------------------------------
-export const get24HoursLabels  = function ()
+export const getStringFormattedDate  = function (now = new Date())
 {
-    // Build labels
-    const labels = [];
-    for (let i = 0; i < 24; ++i)
-    {
-        labels.push(i + "h");
-    }
-
-    return labels;
+    return getTodayDate(now) + "  " + getCurrentTime(now);
 };
 
-export const getWeekLabel  = function ()
-{
-    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-};
-
-export const getYearLabels  = function ()
-{
-    return [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-    ];
-};
+/* For a given date, get the ISO week number
+ * @see https://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
+ */
+export function  getWeekNumber (d) {
+    d = new Date(d);
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
 
 // ---------------------------------------------------
-// Utils
+//
 // ---------------------------------------------------
 export const getYearFilename  = () =>
 {
     return (new Date()).getFullYear() + ".json";
 };
 
+// ---------------------------------------------------
+// Utils
+// ---------------------------------------------------
 export const fakeIp  = () =>
 {
     return (Math.floor(Math.random() * 255) + 1) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255));
@@ -75,8 +53,6 @@ export const fakeIp  = () =>
 // Date and Time strings
 
 
-
-// Labels
 
 
 
