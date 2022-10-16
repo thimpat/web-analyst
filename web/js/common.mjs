@@ -38,7 +38,7 @@ export function  getWeekNumber (d) {
 // ---------------------------------------------------
 export const getYearFilename  = () =>
 {
-    return (new Date()).getFullYear() + ".json";
+    return "charts/" + (new Date()).getFullYear() + ".json";
 };
 
 // ---------------------------------------------------

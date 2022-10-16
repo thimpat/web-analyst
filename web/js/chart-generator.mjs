@@ -1,33 +1,57 @@
-export function generateGenericChart(elem, {
+export function generateGenericBarChart(elem, {
     type = "line",
-    title = "Line Chart",
     labels,
     data = [],
     options = {},
     backgroundColor = "rgb(255, 99, 132)",
     borderColor = "rgb(255, 99, 132)",
-
 })
 {
     try
     {
-        // const dataChart = {
-        //     labels  : labels,
-        //     datasets
-        // };
-
         const config = {
             type,
+            labels,
             data,
             options
         };
 
-        const myChart = new Chart(
+        return new Chart(
             elem,
             config
         );
+    }
+    catch (e)
+    {
+        console.error({lid: 2111}, e.message);
+    }
 
-        return myChart;
+    return null;
+
+}
+
+export function generateGenericPieChart(elem, {
+    labels,
+    datasets = [],
+    options = {},
+})
+{
+    try
+    {
+        const config = {
+            type: "pie",
+            labels,
+            data: {
+                labels,
+                datasets
+            },
+            options
+        };
+
+        return new Chart(
+            elem,
+            config
+        );
     }
     catch (e)
     {
@@ -49,7 +73,7 @@ export function generateLineChart(elem, {
 {
     try
     {
-        const myChart = generateGenericChart(elem, {
+        const myChart = generateGenericBarChart(elem, {
             title,
             data,
             labels,
@@ -80,7 +104,7 @@ export function generateBarChart(elem, {
 {
     try
     {
-        const myChart = generateGenericChart(elem, {
+        return generateGenericBarChart(elem, {
             title,
             data,
             type: "bar",
@@ -88,8 +112,6 @@ export function generateBarChart(elem, {
             backgroundColor,
             borderColor
         });
-
-        return myChart;
     }
     catch (e)
     {
@@ -103,7 +125,7 @@ export function generateBarChart(elem, {
 export function generatePieChart(elem, {
     title = "Pie Chart",
     labels,
-    data = [],
+    datasets = [],
     options = {},
     backgroundColor = [
         "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
@@ -115,17 +137,15 @@ export function generatePieChart(elem, {
 {
     try
     {
-        const myChart = generateGenericChart(elem, {
+        return generateGenericPieChart(elem, {
             title,
-            data,
+            datasets,
             labels,
             type: "pie",
             options,
             backgroundColor,
             borderColor
         });
-
-        return myChart;
     }
     catch (e)
     {
@@ -147,16 +167,16 @@ export function generateDataTables(elem, {data = []} = {})
         }
 
         const table = new Tabulator("#example-table", {
-            height       : 320,
-            persistence  : {
+            height        : 320,
+            persistence   : {
                 sort   : true,
                 filter : true,
                 columns: true,
             },
-            clipboard:true,
-            movableRows:true,
+            clipboard     : true,
+            movableRows   : true,
             movableColumns: true,
-            persistenceID: "examplePerststance",
+            persistenceID : "examplePerststance",
             // layout            : "fitColumns",
             resizableColumnFit: true,
             data,
