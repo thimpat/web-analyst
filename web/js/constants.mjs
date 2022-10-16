@@ -8,12 +8,31 @@ export const MEANINGFUL_LOG_FILES  = {
     HITS_LOG_FILENAME: "hits.log",
 };
 
-export const MEANINGFUL_DATA_FILES  = {
-    HITS_DATA_FILENAME : "hits.json",
-    TODAY_DATA_FILENAME: "today.json",
-    WEEK_DATA_FILENAME : "week.json",
-    IPS_DATA_FILENAME  : "ips.json",
+export const LIST_DATA_FILES  = {
+    IPS_REFS     : "list/ip-map.json",
+    BROWSERS_REFS: "list/browser-map.json",
+    OS_REFS      : "list/os-map.json",
+    LANGUAGES_REF: "list/language-map.json",
 };
+
+export const CHART_DATA_FILES  = {
+    HITS_DATA_FILENAME    : "charts/hits.json",
+    TODAY_DATA_FILENAME   : "charts/today.json",
+    WEEK_DATA_FILENAME    : "charts/week.json",
+    BROWSERS_DATA_FILENAME: "charts/browsers.json",
+};
+
+export const CHART_TYPE  = {
+    BAR: "bar",
+    PIE: "pie"
+};
+
+export const INIT_DATA_CHART  = "{}";
+
+
+
+
+
 
 
 
