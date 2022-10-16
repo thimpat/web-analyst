@@ -3,8 +3,6 @@ export function generateGenericBarChart(elem, {
     labels,
     data = [],
     options = {},
-    backgroundColor = "rgb(255, 99, 132)",
-    borderColor = "rgb(255, 99, 132)",
 })
 {
     try
@@ -39,6 +37,7 @@ export function generateGenericPieChart(elem, {
     try
     {
         const config = {
+            plugins: [ChartDataLabels],
             type: "pie",
             labels,
             data: {
