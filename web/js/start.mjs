@@ -29,7 +29,7 @@ const init = async () =>
         // ------------------------------------------------
         // Browsers
         // ------------------------------------------------
-        // buildBrowserPopularityPie();
+        await buildBrowserPopularityPie();
 
         // // ------------------------------------------------
         // // Language
