@@ -102,7 +102,6 @@ function init(server = "my-server", namespace = "web")
     }
 
     return false;
-
 }
 
 (async function ()
