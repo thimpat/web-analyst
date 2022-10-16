@@ -2,13 +2,14 @@ import {generateBarChart, generateDataTables, generatePieChart, getData} from ".
 import {getYearFilename} from "./common.mjs";
 import {CHART_DATA_FILES} from "./constants.mjs";
 
-
 export const buildVisitorChart = async function (pathname, {
     $chart, style1, style2, title, subTitle
 })
 {
     try
     {
+        // Chart.register(ChartDataLabels);
+
         const jsonData = await getData(pathname);
 
         // Build datasets
@@ -81,12 +82,14 @@ export const buildVisitorChart = async function (pathname, {
 };
 
 export const buildPopularityChart = async function (pathname, {
-    $chart, style1 = {backgroundColor: [
+    $chart, style1 = {
+        backgroundColor: [
             "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
             "rgb(121,152,176)", "rgb(185,168,133)",
             "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
             "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
-        ],}, title, subTitle
+        ],
+    }, title, subTitle
 })
 {
     try
@@ -101,15 +104,15 @@ export const buildPopularityChart = async function (pathname, {
             return;
         }
 
-        /**
+        /**F
          *
          * @type {*[]}
          */
         const datasets = [
             {
-                label          : "Visits",
-                data           : dataVisits,
-                hoverOffset    : 4,
+                label      : "Visits",
+                data       : dataVisits,
+                hoverOffset: 4,
                 ...style1,
             }
         ];
@@ -121,15 +124,31 @@ export const buildPopularityChart = async function (pathname, {
         }
 
         // Build DOM element
-        const options1 = {
+        const options = {
             responsive: true,
             plugins   : {
-                legend: {
+                legend    : {
                     position: "top",
                 },
-                title : {
+                title     : {
                     display: true,
                     text   : title
+                },
+                datalabels: {
+                    /**
+                     * https://stackoverflow.com/questions/52044013/chartjs-datalabels-show-percentage-value-in-pie-piece
+                     * @param value
+                     * @param ctx
+                     * @returns {string}
+                     */
+                    formatter: (value, ctx) => {
+                        let sum = 0;
+                        let dataArr = ctx.chart.data.datasets[0].data;
+                        dataArr.map(data => {
+                            sum += data;
+                        });
+                        return (value * 100 / sum).toFixed(2) + "%";
+                    },
                 }
             }
         };
@@ -138,7 +157,7 @@ export const buildPopularityChart = async function (pathname, {
             title          : subTitle,
             labels,
             datasets,
-            options        : options1,
+            options,
             backgroundColor: "rgb(180,181,217)",
             borderColor    : "rgb(76,87,134)",
         });
