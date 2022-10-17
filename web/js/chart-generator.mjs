@@ -38,9 +38,9 @@ export function generateGenericPieChart(elem, {
     {
         const config = {
             plugins: [ChartDataLabels],
-            type: "pie",
+            type   : "pie",
             labels,
-            data: {
+            data   : {
                 labels,
                 datasets
             },
@@ -159,31 +159,23 @@ export function generateDataTables(elem, {data = []} = {})
 {
     try
     {
-        for (let i = 0; i < data.length; ++i)
-        {
-            const line = data[i];
-            line.id = i;
-        }
-
-        const table = new Tabulator("#example-table", {
-            height        : 320,
-            persistence   : {
+        return new Tabulator("#endpoint-table", {
+            height            : 320,
+            persistence       : {
                 sort   : true,
-                filter : true,
                 columns: true,
             },
-            clipboard     : true,
-            movableRows   : true,
-            movableColumns: true,
-            persistenceID : "examplePerststance",
-            // layout            : "fitColumns",
+            clipboard         : true,
+            columnMinWidth    : 80,
+            movableRows       : true,
+            movableColumns    : true,
+            persistenceID     : "examplePerststance",
+            layout            : "fitDataFill",
             resizableColumnFit: true,
             data,
             autoColumns       : true,
             placeholder       : "Awaiting Data, Please Load File"
         });
-
-        return table;
     }
     catch (e)
     {

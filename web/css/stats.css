@@ -12,37 +12,20 @@ body {
   margin-bottom: 50px;
   margin-top: 50px;
 }
+.container .section.bar {
+  margin: 100px auto;
+}
 .container .section.pie {
-  margin: 60px auto;
+  margin: 100px auto;
   max-width: 600px;
 }
-/*Theme the Tabulator element*/
-#example-table-theme {
-  background-color: #b4b5d999;
-  border: 1px solid #333;
-  border-radius: 0;
-  /*Allow column header names to wrap lines*/
-  /*Color the table rows*/
-  /*Color even rows*/
+.container .section.table {
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  margin: 100px auto;
 }
-#example-table-theme input[type=text] {
-  background-color: #e0e0ec2e;
-  border: 1px solid #0000001f;
-}
-#example-table-theme .tabulator-header {
-  background-color: #333;
-  color: #fff;
-}
-#example-table-theme .tabulator-header .tabulator-col,
-#example-table-theme .tabulator-header .tabulator-col-row-handle {
-  white-space: normal;
-}
-#example-table-theme .tabulator-tableHolder .tabulator-table .tabulator-row {
-  color: #fff;
-  background-color: #666;
-}
-#example-table-theme .tabulator-tableHolder .tabulator-table .tabulator-row:nth-child(even) {
-  background-color: #444;
+.container .section.table .tabulator-row {
+  padding: 8px 0;
 }
 
 /*# sourceMappingURL=stats.css.map */

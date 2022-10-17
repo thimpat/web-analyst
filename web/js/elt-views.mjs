@@ -260,88 +260,13 @@ export const buildVisitorsYear = async function ()
     return false;
 };
 
-export const buildBrowserPopularityPie = async function (chartPathname, {
-    $chart,
-    title   = "Browser popularity",
-    subTitle = "Popularity"
-} = {})
-{
-    try
-    {
-        // const yearFilename = getYearFilename();
-
-        await buildPopularityChart(chartPathname,
-            {
-                $chart,
-                title,
-                subTitle
-            });
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 2443}, e.message);
-    }
-
-    return false;
-};
-
-export const buildDataTable = async function ()
+export const buildDataTable = async function (pathname)
 {
     try
     {
         // Data
-        const dataTables = await getData(CHART_DATA_FILES.HITS_DATA_FILENAME);
-
-        //
-        const table = generateDataTables("#example-table", {data: dataTables});
-
-        const fieldEl = document.getElementById("filter-field");
-        const typeEl = document.getElementById("filter-type");
-        const valueEl = document.getElementById("filter-value");
-
-        function customFilter(data)
-        {
-            return data.date;
-        }
-
-        function updateFilter()
-        {
-            const filterVal = fieldEl.options[fieldEl.selectedIndex].value;
-            const typeVal = typeEl.options[typeEl.selectedIndex].value;
-
-            const filter = filterVal === "function" ? customFilter : filterVal;
-
-            if (filterVal === "function")
-            {
-                typeEl.disabled = true;
-                valueEl.disabled = true;
-            }
-            else
-            {
-                typeEl.disabled = false;
-                valueEl.disabled = false;
-            }
-
-            if (filterVal)
-            {
-                table.setFilter(filter, typeVal, valueEl.value);
-            }
-        }
-
-        document.getElementById("filter-field").addEventListener("change", updateFilter);
-        document.getElementById("filter-type").addEventListener("change", updateFilter);
-        document.getElementById("filter-value").addEventListener("keyup", updateFilter);
-
-        document.getElementById("filter-clear").addEventListener("click", function ()
-        {
-            fieldEl.value = "";
-            typeEl.value = "=";
-            valueEl.value = "";
-
-            table.clearFilter();
-        });
+        const dataTables = await getData(pathname);
+        generateDataTables("#endpoint-table", {data: dataTables});
 
         return true;
     }
