@@ -1,9 +1,9 @@
 import {
-    buildVisitorDay,
-    buildVisitorsYear,
-    buildVisitorsWeek, buildPopularityChart, buildDataTable
+    buildVisitorGraph,
+    buildPopularityGraph, buildDataTable, buildMoneyGraph
 } from "./elt-views.mjs";
 import {CHART_DATA_FILES} from "./constants.mjs";
+import {getYearFilename} from "./common.mjs";
 
 
 const init = async () =>
@@ -13,32 +13,53 @@ const init = async () =>
         // ------------------------------------------------
         // Visitors: day / Week / Months
         // ------------------------------------------------
-        await buildVisitorDay();
-        await buildVisitorsWeek();
-        await buildVisitorsYear();
+        await buildVisitorGraph(CHART_DATA_FILES.TODAY_DATA_FILENAME, {
+            $chart: document.getElementById("visitorHours"),
+            title   : "Today",
+            subTitle: "Visitor per hour"
+        });
+
+        await buildVisitorGraph(CHART_DATA_FILES.WEEK_DATA_FILENAME, {
+            $chart: document.getElementById("visitorsWeek"),
+            title   : "This week",
+            subTitle: "Visitor per day"
+        });
+
+        const yearFilename = getYearFilename();
+        await buildVisitorGraph(yearFilename, {
+            $chart: document.getElementById("visitorsYear"),
+            title   : "This year",
+            subTitle: "Visitor per month"
+        });
 
         // ------------------------------------------------
         // Popularity: Browsers / OS / Languages
         // ------------------------------------------------
-        await buildPopularityChart(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,{
+        await buildPopularityGraph(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,{
             $chart: document.getElementById("browsers"),
             title: "Browser popularity"
         });
 
-        await buildPopularityChart(CHART_DATA_FILES.OSES_DATA_FILENAME,{
+        await buildPopularityGraph(CHART_DATA_FILES.OSES_DATA_FILENAME,{
             $chart: document.getElementById("oses"),
             title: "OS popularity"
         });
 
-        await buildPopularityChart(CHART_DATA_FILES.LANGUAGES_DATA_FILENAME,{
+        await buildPopularityGraph(CHART_DATA_FILES.LANGUAGES_DATA_FILENAME,{
             $chart: document.getElementById("languages"),
             title: "Language popularity"
         });
 
-        // // ------------------------------------------------
-        // // All data
-        // // ------------------------------------------------
+        // ------------------------------------------------
+        // Endpoint frequencies
+        // ------------------------------------------------
         await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME);
+
+        await buildMoneyGraph(CHART_DATA_FILES.MONEY_DATA_FILENAME, {
+            $chart: document.getElementById("money"),
+            title   : "This year",
+            subTitle: "Earning per month"
+        });
 
         return true;
     }

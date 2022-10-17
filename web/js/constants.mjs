@@ -20,6 +20,7 @@ export const CHART_DATA_FILES  = {
     HITS_DATA_FILENAME     : "charts/hits.json",
     TODAY_DATA_FILENAME    : "charts/today.json",
     WEEK_DATA_FILENAME     : "charts/week.json",
+    MONEY_DATA_FILENAME    : "charts/money.json",
     BROWSERS_DATA_FILENAME : "charts/browser-popularity.json",
     OSES_DATA_FILENAME     : "charts/os-popularity.json",
     LANGUAGES_DATA_FILENAME: "charts/language-popularity.json",
@@ -27,6 +28,7 @@ export const CHART_DATA_FILES  = {
 };
 
 export const CHART_TYPE  = {
+    LINE : "line",
     BAR  : "bar",
     PIE  : "pie",
     TABLE: "table"
