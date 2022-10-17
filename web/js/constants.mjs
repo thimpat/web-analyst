@@ -9,10 +9,10 @@ export const MEANINGFUL_LOG_FILES  = {
 };
 
 export const LIST_DATA_FILES  = {
-    IPS_REFS     : "maps/ips.json",
-    BROWSERS_REFS: "maps/browsers.json",
-    OS_REFS      : "maps/oses.json",
-    LANGUAGES_REF: "maps/languages.json",
+    IPS_REFS     : "indexers/ips.json",
+    BROWSERS_REFS: "indexers/browsers.json",
+    OS_REFS      : "indexers/oses.json",
+    LANGUAGES_REF: "indexers/languages.json",
 };
 
 export const CHART_DATA_FILES  = {
