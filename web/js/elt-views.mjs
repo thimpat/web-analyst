@@ -97,8 +97,8 @@ export const buildPopularityChart = async function (pathname, {
         const jsonData = await getData(pathname);
 
         // Build datasets
-        const {dataVisits, labels} = jsonData;
-        if (!dataVisits)
+        const {labels, percentages} = jsonData;
+        if (!percentages)
         {
             console.error(`Missing data visitors`);
             return;
@@ -111,7 +111,7 @@ export const buildPopularityChart = async function (pathname, {
         const datasets = [
             {
                 label      : "Visits",
-                data       : dataVisits,
+                data       : percentages,
                 hoverOffset: 4,
                 ...style1,
             }
@@ -141,13 +141,8 @@ export const buildPopularityChart = async function (pathname, {
                      * @param ctx
                      * @returns {string}
                      */
-                    formatter: (value, ctx) => {
-                        let sum = 0;
-                        let dataArr = ctx.chart.data.datasets[0].data;
-                        dataArr.map(data => {
-                            sum += data;
-                        });
-                        return (value * 100 / sum).toFixed(2) + "%";
+                    formatter: (value) => {
+                        return value + "%";
                     },
                 }
             }
