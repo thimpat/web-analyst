@@ -265,18 +265,21 @@ export const buildVisitorsYear = async function ()
     return false;
 };
 
-export const buildBrowserPopularityPie = async function ()
+export const buildBrowserPopularityPie = async function (chartPathname, {
+    $chart,
+    title   = "Browser popularity",
+    subTitle = "Popularity"
+} = {})
 {
     try
     {
         // const yearFilename = getYearFilename();
-        const $chart = document.getElementById("browser");
 
-        await buildPopularityChart(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,
+        await buildPopularityChart(chartPathname,
             {
                 $chart,
-                title   : "Browser popularity",
-                subTitle: "Popularity"
+                title,
+                subTitle
             });
 
         return true;

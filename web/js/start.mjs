@@ -1,42 +1,40 @@
 import {
-    buildDataTable,
     buildVisitorDay,
     buildVisitorsYear,
-    buildVisitorsWeek, buildBrowserPopularityPie, buildLanguagePie
+    buildVisitorsWeek, buildBrowserPopularityPie
 } from "./elt-views.mjs";
+import {CHART_DATA_FILES} from "./constants.mjs";
 
 
 const init = async () =>
 {
     try
     {
-        // generateLineChart($lineChart, {title: "My First dataset", labels, data, options});
-
         // ------------------------------------------------
-        // Visitor per day
+        // Visitors: day / Week / Months
         // ------------------------------------------------
         await buildVisitorDay();
-
-        // ------------------------------------------------
-        // Visitor per week
-        // ------------------------------------------------
         await buildVisitorsWeek();
-
-        // ------------------------------------------------
-        // Visitor per month
-        // ------------------------------------------------
         await buildVisitorsYear();
 
         // ------------------------------------------------
-        // Browsers
+        // Popularity: Browsers / OS / Languages
         // ------------------------------------------------
-        await buildBrowserPopularityPie();
+        await buildBrowserPopularityPie(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,{
+            $chart: document.getElementById("browsers"),
+            title: "Browser popularity"
+        });
 
-        // // ------------------------------------------------
-        // // Language
-        // // ------------------------------------------------
-        // buildLanguagePie();
-        //
+        await buildBrowserPopularityPie(CHART_DATA_FILES.OSES_DATA_FILENAME,{
+            $chart: document.getElementById("oses"),
+            title: "OS popularity"
+        });
+
+        await buildBrowserPopularityPie(CHART_DATA_FILES.LANGUAGES_DATA_FILENAME,{
+            $chart: document.getElementById("languages"),
+            title: "Language popularity"
+        });
+
         // // ------------------------------------------------
         // // All data
         // // ------------------------------------------------
