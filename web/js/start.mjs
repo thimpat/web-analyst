@@ -38,7 +38,7 @@ const init = async () =>
         // // ------------------------------------------------
         // // All data
         // // ------------------------------------------------
-        // await buildDataTable();
+        await buildDataTable();
 
         return true;
     }
