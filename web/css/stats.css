@@ -31,14 +31,16 @@ body {
   display: block;
   margin: auto;
   min-width: 400px;
-  /* max-width: 600px; */
   width: 60%;
 }
 .container .section {
   margin-bottom: 50px;
   margin-top: 50px;
 }
-
+.container .section.pie {
+  margin: 60px auto;
+  max-width: 600px;
+}
 /*Theme the Tabulator element*/
 #example-table-theme {
   background-color: #b4b5d999;
