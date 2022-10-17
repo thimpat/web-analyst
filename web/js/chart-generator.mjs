@@ -1,5 +1,5 @@
-export function generateGenericBarChart(elem, {
-    type = "line",
+export function generateGenericChart(elem, {
+    type = "bar",
     labels,
     data = [],
     options = {},
@@ -61,39 +61,8 @@ export function generateGenericPieChart(elem, {
 
 }
 
-export function generateLineChart(elem, {
-    title = "Line Chart",
-    labels,
-    data = [],
-    options = {},
-    backgroundColor = "rgb(125,169,117)",
-    borderColor = "rgb(70,107,77)",
-} = {})
-{
-    try
-    {
-        const myChart = generateGenericBarChart(elem, {
-            title,
-            data,
-            labels,
-            type: "line",
-            options,
-            backgroundColor,
-            borderColor
-        });
-
-        return myChart;
-    }
-    catch (e)
-    {
-        console.error({lid: 2111}, e.message);
-    }
-
-    return null;
-
-}
-
 export function generateBarChart(elem, {
+    type = "bar",
     title = "Line Chart",
     data = [],
     options = {},
@@ -103,10 +72,10 @@ export function generateBarChart(elem, {
 {
     try
     {
-        return generateGenericBarChart(elem, {
+        return generateGenericChart(elem, {
+            type,
             title,
             data,
-            type: "bar",
             options,
             backgroundColor,
             borderColor

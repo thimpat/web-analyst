@@ -1,5 +1,10 @@
-import {generateBarChart, generateDataTables, generatePieChart, getData} from "./chart-generator.mjs";
-import {getYearFilename} from "./common.mjs";
+import {
+    generateBarChart,
+    generateDataTables,
+    generateGenericChart,
+    generatePieChart,
+    getData
+} from "./chart-generator.mjs";
 import {CHART_DATA_FILES} from "./constants.mjs";
 
 export const buildVisitorChart = async function (pathname, {
@@ -81,7 +86,76 @@ export const buildVisitorChart = async function (pathname, {
     return false;
 };
 
-export const buildPopularityChart = async function (pathname, {
+export const buildMoneyChart = async function (pathname, {
+    $chart, style1, title, subTitle
+})
+{
+    try
+    {
+        const jsonData = await getData(pathname);
+
+        // Build datasets
+        let {money, labels} = jsonData;
+        if (!labels)
+        {
+            console.error(`Missing labels`);
+            return;
+        }
+
+        money = money || 0;
+
+        const datasets = [
+            {
+                label: "Earnings",
+                data : money,
+                ...style1,
+            }
+        ];
+
+        const data = {labels, datasets};
+
+        // Build DOM element
+        const options1 = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : title
+                }
+            },
+            scales    : {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                }
+            }
+        };
+
+        generateGenericChart($chart, {
+            type           : "line",
+            title          : subTitle,
+            data,
+            options        : options1,
+            backgroundColor: "rgb(180,181,217)",
+            borderColor    : "rgb(76,87,134)",
+        });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2437}, e.message);
+    }
+
+    return false;
+};
+
+export const buildPopularityGraph = async function (pathname, {
     $chart, style1 = {
         backgroundColor: [
             "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
@@ -141,7 +215,8 @@ export const buildPopularityChart = async function (pathname, {
                      * @param ctx
                      * @returns {string}
                      */
-                    formatter: (value) => {
+                    formatter: (value) =>
+                    {
                         return value + "%";
                     },
                 }
@@ -167,26 +242,24 @@ export const buildPopularityChart = async function (pathname, {
     return false;
 };
 
-export const buildVisitorDay = async function ()
+export const buildVisitorGraph = async function (pathname, {$chart, title, subTitle})
 {
     try
     {
         // Build DOM element
-        const $chart = document.getElementById("visitorHours");
-
         await buildVisitorChart(CHART_DATA_FILES.TODAY_DATA_FILENAME,
             {
                 $chart,
-                style1  : {
+                style1: {
                     backgroundColor: "rgb(180,181,217)",
                     borderColor    : "rgb(76,87,134)",
                 },
-                style2  : {
+                style2: {
                     backgroundColor: "rgb(188,217,180)",
                     borderColor    : "rgb(76,134,123)",
                 },
-                title   : "Today",
-                subTitle: "Visitor per hour"
+                title,
+                subTitle
             });
 
         return true;
@@ -199,62 +272,31 @@ export const buildVisitorDay = async function ()
     return false;
 };
 
-export const buildVisitorsWeek = async function ()
+export const buildMoneyGraph = async function (pathname, {$chart, title, subTitle})
 {
     try
     {
-        const $chart = document.getElementById("visitorsWeek");
-        await buildVisitorChart(CHART_DATA_FILES.WEEK_DATA_FILENAME,
+        // Build DOM element
+        await buildMoneyChart(CHART_DATA_FILES.MONEY_DATA_FILENAME,
             {
                 $chart,
-                style1  : {
-                    backgroundColor: "rgb(195,180,217)",
+                style1: {
+                    backgroundColor: "rgb(180,181,217)",
                     borderColor    : "rgb(76,87,134)",
                 },
-                style2  : {
+                style2: {
                     backgroundColor: "rgb(188,217,180)",
                     borderColor    : "rgb(76,134,123)",
                 },
-                title   : "This week",
-                subTitle: "Visitor per day"
+                title,
+                subTitle
             });
 
         return true;
     }
     catch (e)
     {
-        console.error({lid: 2439}, e.message);
-    }
-
-    return false;
-};
-
-export const buildVisitorsYear = async function ()
-{
-    try
-    {
-        const $chart = document.getElementById("visitorsYear");
-        const yearFilename = getYearFilename();
-        await buildVisitorChart(yearFilename,
-            {
-                $chart,
-                style1  : {
-                    backgroundColor: "rgb(195,180,217)",
-                    borderColor    : "rgb(76,87,134)",
-                },
-                style2  : {
-                    backgroundColor: "rgb(188,217,180)",
-                    borderColor    : "rgb(76,134,123)",
-                },
-                title   : "This year",
-                subTitle: "Visitor per month"
-            });
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 2441}, e.message);
+        console.error({lid: 2437}, e.message);
     }
 
     return false;
