@@ -1,7 +1,7 @@
 import {
     buildVisitorDay,
     buildVisitorsYear,
-    buildVisitorsWeek, buildBrowserPopularityPie
+    buildVisitorsWeek, buildPopularityChart, buildDataTable
 } from "./elt-views.mjs";
 import {CHART_DATA_FILES} from "./constants.mjs";
 
@@ -20,17 +20,17 @@ const init = async () =>
         // ------------------------------------------------
         // Popularity: Browsers / OS / Languages
         // ------------------------------------------------
-        await buildBrowserPopularityPie(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,{
+        await buildPopularityChart(CHART_DATA_FILES.BROWSERS_DATA_FILENAME,{
             $chart: document.getElementById("browsers"),
             title: "Browser popularity"
         });
 
-        await buildBrowserPopularityPie(CHART_DATA_FILES.OSES_DATA_FILENAME,{
+        await buildPopularityChart(CHART_DATA_FILES.OSES_DATA_FILENAME,{
             $chart: document.getElementById("oses"),
             title: "OS popularity"
         });
 
-        await buildBrowserPopularityPie(CHART_DATA_FILES.LANGUAGES_DATA_FILENAME,{
+        await buildPopularityChart(CHART_DATA_FILES.LANGUAGES_DATA_FILENAME,{
             $chart: document.getElementById("languages"),
             title: "Language popularity"
         });
@@ -38,7 +38,7 @@ const init = async () =>
         // // ------------------------------------------------
         // // All data
         // // ------------------------------------------------
-        await buildDataTable();
+        await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME);
 
         return true;
     }
