@@ -9,10 +9,11 @@ export const MEANINGFUL_LOG_FILES  = {
 };
 
 export const LIST_DATA_FILES  = {
-    IPS_REFS     : "indexers/ips.json",
-    BROWSERS_REFS: "indexers/browsers.json",
-    OS_REFS      : "indexers/oses.json",
-    LANGUAGES_REF: "indexers/languages.json",
+    IPS_REFS      : "indexers/ips.json",
+    BROWSERS_REFS : "indexers/browsers.json",
+    OS_REFS       : "indexers/oses.json",
+    ENDPOINTS_REFS: "indexers/endpoints.json",
+    LANGUAGES_REF : "indexers/languages.json",
 };
 
 export const CHART_DATA_FILES  = {
@@ -22,11 +23,13 @@ export const CHART_DATA_FILES  = {
     BROWSERS_DATA_FILENAME : "charts/browser-popularity.json",
     OSES_DATA_FILENAME     : "charts/os-popularity.json",
     LANGUAGES_DATA_FILENAME: "charts/language-popularity.json",
+    ENDPOINTS_DATA_FILENAME: "charts/endpoints-table.json"
 };
 
 export const CHART_TYPE  = {
-    BAR: "bar",
-    PIE: "pie"
+    BAR  : "bar",
+    PIE  : "pie",
+    TABLE: "table"
 };
 
 export const INIT_DATA_CHART  = "{}";

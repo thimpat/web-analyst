@@ -287,45 +287,6 @@ export const buildBrowserPopularityPie = async function (chartPathname, {
     return false;
 };
 
-export const buildLanguagePie = function ()
-{
-    try
-    {
-        const labelsLanguages = [
-            "en",
-            "fr",
-            "sp",
-            "ru",
-        ];
-
-        const $chart = document.getElementById("languages");
-        const options5 = {
-            responsive: true,
-            plugins   : {
-                legend: {
-                    position: "top",
-                },
-                title : {
-                    display: true,
-                    text   : "This year"
-                }
-            }
-        };
-        generatePieChart($chart, {
-            title      : "Languages", labels: labelsLanguages, data, options: options5,
-            borderColor: "transparent",
-        });
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 2445}, e.message);
-    }
-
-    return false;
-};
-
 export const buildDataTable = async function ()
 {
     try
