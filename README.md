@@ -6,19 +6,28 @@ Web Analyst is a plugin for Genserve
    
 npm install web-analyst
 
+<br/>
+
+---
 
 ## 2. Notes
 
 * **v2** works with Genserve (https://www.npmjs.com/package/genserve)
 * **v1** works with Express but is not maintained
 
-## Usage
+<br/>
+
+---
+
+## 3. Usage
 
 ##### Install Genserve
 
 ```
 $> npm install genserve -g
 ```
+
+<br/>
 
 ##### Create a genserve config file and add a plugin section
 
