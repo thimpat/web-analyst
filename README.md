@@ -45,3 +45,14 @@ $> npm install genserve -g
 * dir    : Directory where the generated assets will be installed
 * pages  : Regex list for taking into account when generating charts
 * earning: Pattern to identify earnings
+
+<br/>
+
+---
+
+## 4. Preview
+
+![Screenshot](https://github.com/thimpat/demos/blob/main/web-analyst/images/stats-plugin-3.png)
+
+
+
