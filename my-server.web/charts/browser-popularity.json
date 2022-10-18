@@ -1,0 +1,17 @@
+{
+  "labels": [
+    "Chrome",
+    "Firefox",
+    "Other"
+  ],
+  "dataVisits": [
+    1085304,
+    417445,
+    1959667
+  ],
+  "percentages": [
+    31.35,
+    12.06,
+    56.6
+  ]
+}
