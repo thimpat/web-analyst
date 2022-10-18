@@ -114,3 +114,5 @@ crashlytics-build.properties
 /my-server.web.zip
 /.idea/
 /.eslintrc.cjs
+/web/css/stats.scss
+*.tgz
