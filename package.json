@@ -30,9 +30,13 @@
   "license": "MIT",
   "dependencies": {
     "@thimpat/libutils": "^1.13.0",
+    "accept-language-parser": "^1.5.0",
     "chart.js": "^1.1.1",
+    "clonefile": "^3.2.2",
+    "minimist": "^1.2.7",
     "tabulator-tables": "^5.4.1",
-    "ua-parser-js": "^0.7.9"
+    "ua-parser-js": "^0.7.9",
+    "useragent": "^2.3.0"
   },
   "browser": {
     "Chartjs": "./node_modules/chart.js/Chart.js"
