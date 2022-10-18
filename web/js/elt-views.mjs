@@ -247,7 +247,7 @@ export const buildVisitorGraph = async function (pathname, {$chart, title, subTi
     try
     {
         // Build DOM element
-        await buildVisitorChart(CHART_DATA_FILES.TODAY_DATA_FILENAME,
+        await buildVisitorChart(pathname,
             {
                 $chart,
                 style1: {
