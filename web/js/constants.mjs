@@ -5,6 +5,8 @@
  * 
  **/
 const CURRENT_YEAR = (new Date()).getFullYear();
+
+export const STATS_DIR  = "stats";
 export const SUB_DATA_DIR  = "data";
 
 export const MEANINGFUL_LOG_FILES  = {
@@ -44,6 +46,9 @@ export const VIEW_TYPE  = {
 };
 
 export const INIT_DATA_CHART  = "{}";
+export const DEFAULT_PLUGIN_PATTERN  = ".html$";
+
+
 
 
 

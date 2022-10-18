@@ -1,4 +1,6 @@
 const CURRENT_YEAR = (new Date()).getFullYear();
+
+const STATS_DIR = "stats";
 const SUB_DATA_DIR = "data";
 
 const MEANINGFUL_LOG_FILES = {
@@ -38,6 +40,7 @@ const VIEW_TYPE = {
 };
 
 const INIT_DATA_CHART = "{}";
+const DEFAULT_PLUGIN_PATTERN = ".html$";
 
 module.exports.MEANINGFUL_LOG_FILES = MEANINGFUL_LOG_FILES;
 module.exports.LIST_DATA_FILES = LIST_DATA_FILES;
@@ -46,6 +49,8 @@ module.exports.CHART_TYPE = CHART_TYPE;
 module.exports.CHART_DATA_FILES = CHART_DATA_FILES;
 
 module.exports.INIT_DATA_CHART = INIT_DATA_CHART;
-module.exports.SUB_DATA_DIR = SUB_DATA_DIR;
-
 module.exports.VIEW_TYPE = VIEW_TYPE;
+
+module.exports.STATS_DIR = STATS_DIR;
+module.exports.SUB_DATA_DIR = SUB_DATA_DIR;
+module.exports.DEFAULT_PLUGIN_PATTERN = DEFAULT_PLUGIN_PATTERN;
