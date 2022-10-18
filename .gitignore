@@ -86,4 +86,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 *.map
-
+/my-server.web/
+/my-server.web.zip
