@@ -5,12 +5,15 @@ const url = require("url");
 const {fakeIp} = require("./lib/utils/common.cjs");
 const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
 const minimist = require("minimist");
+const {setOptions} = require("./lib/utils/options.cjs");
+const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
+const {isPagePattern} = require("./lib/utils/pattern.cjs");
 
 /**
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, connection = {}, socket = {}, data = {}, extraData = {}, ip} = {})
+function trackData(req, res, {headers = {}, ip} = {})
 {
     try
     {
@@ -26,12 +29,14 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
             infoReq[k] = infoReq[k] || "";
         }
 
-        if (infoReq.pathname === "/")
+         if (!isPagePattern(infoReq.pathname))
         {
-            if (!Math.floor(Math.random() * 3))
-            {
-                ip = fakeIp();
-            }
+            return;
+        }
+
+        if (!Math.floor(Math.random() * 3))
+        {
+            ip = fakeIp();
         }
 
         registerHit({
@@ -54,6 +59,7 @@ function trackData(req, res, {headers = {}, connection = {}, socket = {}, data =
 
 /**
  * GenServe message handler
+ * @param pagePattern
  * @param action
  * @param req
  * @param res
@@ -91,18 +97,14 @@ function init()
     try
     {
         const argv = minimist(process.argv.slice(2));
-        const session = JSON.parse(argv.session);
 
-        const server = session.serverName;
-        const namespace = session.namespace;
+        setSession(argv.session);
+        setOptions(argv.options);
 
-        let options = {};
-        if (argv.options)
-        {
-            options = JSON.parse(argv.options);
-        }
+        const server = getSessionProperty("serverName");
+        const namespace = getSessionProperty("namespace");
 
-        startLogEngine(server, namespace, {options});
+        startLogEngine(server, namespace);
 
         // Set a listener on Genserve events
         process.on("message", onGenserveMessage);
