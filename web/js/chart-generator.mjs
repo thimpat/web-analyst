@@ -1,3 +1,5 @@
+import {SUB_DATA_DIR} from "./constants.mjs";
+
 export function generateGenericChart(elem, {
     type = "bar",
     labels,
@@ -155,12 +157,17 @@ export function generateDataTables(elem, {data = []} = {})
 
 }
 
+/**
+ * Fetch data from datadir
+ * @param endPoint
+ * @returns {Promise<*>}
+ */
 export const getData = async function (endPoint)
 {
     let result;
     try
     {
-        const url = "./" + endPoint;
+        const url = "./" + SUB_DATA_DIR + "/" + endPoint;
         const response = await fetch(url);
         result = await response.json();
     }
