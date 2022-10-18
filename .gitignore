@@ -88,3 +88,4 @@ dist
 *.map
 /my-server.web/
 /my-server.web.zip
+/.idea/
