@@ -1,0 +1,30 @@
+{
+  "labels": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "date": "2022-10-18",
+  "dataVisitors": [
+    0,
+    25011,
+    2778,
+    0,
+    0,
+    0,
+    0
+  ],
+  "dataUniqueVisitors": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

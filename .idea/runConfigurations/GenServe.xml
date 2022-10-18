@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GenServe" type="NodeJSConfigurationType" application-parameters="restart config genserve.projects --blockmode" node-parameters="--trace-warnings" path-to-js-file="client.cjs" working-dir="$PROJECT_DIR$/../genserve">
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="build:all" run_configuration_type="js.build_tools.npm" />
+    </method>
+  </configuration>
+</component>
