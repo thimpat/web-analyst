@@ -36,10 +36,6 @@ export function  getWeekNumber (d) {
 // ---------------------------------------------------
 // Utils
 // ---------------------------------------------------
-export const fakeIp  = () =>
-{
-    return (Math.floor(Math.random() * 255) + 1) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255));
-};
 
 
 // Date and Time strings

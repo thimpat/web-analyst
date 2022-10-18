@@ -14,8 +14,6 @@ export const buildVisitorChart = async function (pathname, {
 {
     try
     {
-        // Chart.register(ChartDataLabels);
-
         const jsonData = await getData(pathname);
 
         // Build datasets
