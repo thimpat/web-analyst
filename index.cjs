@@ -2,7 +2,6 @@
  * Created by thimpat on 04/11/2015.
  */
 const url = require("url");
-const {fakeIp} = require("./lib/utils/common.cjs");
 const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
 const minimist = require("minimist");
 const {setOptions} = require("./lib/utils/options.cjs");
@@ -32,11 +31,6 @@ function trackData(req, res, {headers = {}, ip} = {})
          if (!isPagePattern(infoReq.pathname))
         {
             return;
-        }
-
-        if (!Math.floor(Math.random() * 3))
-        {
-            ip = fakeIp();
         }
 
         registerHit({
