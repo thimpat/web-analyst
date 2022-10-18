@@ -59,14 +59,14 @@ export const buildVisitorChart = async function (pathname, {
                     text   : title
                 }
             },
-            scales    : {
-                x: {
-                    stacked: true,
-                },
-                y: {
-                    stacked: true
-                }
-            }
+            // scales    : {
+            //     x: {
+            //         stacked: true,
+            //     },
+            //     y: {
+            //         stacked: true
+            //     }
+            // }
         };
 
         generateBarChart($chart, {
