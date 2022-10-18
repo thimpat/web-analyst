@@ -113,3 +113,4 @@ crashlytics-build.properties
 /my-server.web/
 /my-server.web.zip
 /.idea/
+/.eslintrc.cjs
