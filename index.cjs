@@ -7,7 +7,7 @@ const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
 const minimist = require("minimist");
 const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
-const {isPagePattern} = require("./lib/utils/pattern.cjs");
+const {isPagePattern} = require("./lib/utils/patterns.cjs");
 
 /**
  * Harvest data
