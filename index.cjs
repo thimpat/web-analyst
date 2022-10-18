@@ -4,6 +4,7 @@
 const url = require("url");
 const {fakeIp} = require("./lib/utils/common.cjs");
 const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
+const minimist = require("minimist");
 
 /**
  * Harvest data
@@ -85,11 +86,23 @@ function onGenserveMessage({action, req, res, headers, connection, socket, data,
 /**
  * Set up the engine
  */
-function init(server = "my-server", namespace = "web")
+function init()
 {
     try
     {
-        startLogEngine(server, namespace);
+        const argv = minimist(process.argv.slice(2));
+        const session = JSON.parse(argv.session);
+
+        const server = session.serverName;
+        const namespace = session.namespace;
+
+        let options = {};
+        if (argv.options)
+        {
+            options = JSON.parse(argv.options);
+        }
+
+        startLogEngine(server, namespace, {options});
 
         // Set a listener on Genserve events
         process.on("message", onGenserveMessage);
