@@ -1,9 +1,8 @@
 import {
     buildVisitorGraph,
-    buildPopularityGraph, buildDataTable, buildMoneyGraph
+    buildPopularityGraph, buildDataTable, buildEarningsGraph
 } from "./elt-views.mjs";
-import {CHART_DATA_FILES} from "./constants.mjs";
-import {getYearFilename} from "./common.mjs";
+import {CHART_DATA_FILES, VIEW_TYPE} from "./constants.mjs";
 
 
 const init = async () =>
@@ -25,8 +24,7 @@ const init = async () =>
             subTitle: "Visitor per day"
         });
 
-        const yearFilename = getYearFilename();
-        await buildVisitorGraph(yearFilename, {
+        await buildVisitorGraph(CHART_DATA_FILES.YEAR_DATA_FILENAME, {
             $chart: document.getElementById("visitorsYear"),
             title   : "This year",
             subTitle: "Visitor per month"
@@ -55,8 +53,19 @@ const init = async () =>
         // ------------------------------------------------
         await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME);
 
-        await buildMoneyGraph(CHART_DATA_FILES.MONEY_DATA_FILENAME, {
-            $chart: document.getElementById("money"),
+        // ------------------------------------------------
+        // Earnings
+        // ------------------------------------------------
+        await buildEarningsGraph(CHART_DATA_FILES.EARNING_DATA_FILENAME, {
+            view: VIEW_TYPE.WEEK,
+            $chart: document.getElementById("money-day"),
+            title   : "This week",
+            subTitle: "Earning per day"
+        });
+
+        await buildEarningsGraph(CHART_DATA_FILES.EARNING_DATA_FILENAME, {
+            view: VIEW_TYPE.YEAR,
+            $chart: document.getElementById("money-month"),
             title   : "This year",
             subTitle: "Earning per month"
         });

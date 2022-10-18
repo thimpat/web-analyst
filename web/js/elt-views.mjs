@@ -5,7 +5,8 @@ import {
     generatePieChart,
     getData
 } from "./chart-generator.mjs";
-import {CHART_DATA_FILES} from "./constants.mjs";
+import {CHART_DATA_FILES, VIEW_TYPE} from "./constants.mjs";
+import {getWeekLabels, getYearLabels} from "./fixed-label-generator.mjs";
 
 export const buildVisitorChart = async function (pathname, {
     $chart, style1, style2, title, subTitle
@@ -87,7 +88,7 @@ export const buildVisitorChart = async function (pathname, {
 };
 
 export const buildMoneyChart = async function (pathname, {
-    $chart, style1, title, subTitle
+    view, $chart, style1, title, subTitle
 })
 {
     try
@@ -95,14 +96,24 @@ export const buildMoneyChart = async function (pathname, {
         const jsonData = await getData(pathname);
 
         // Build datasets
-        let {money, labels} = jsonData;
-        if (!labels)
+        let {months, days} = jsonData;
+
+        let labels, money;
+        if (view === VIEW_TYPE.WEEK)
         {
-            console.error(`Missing labels`);
-            return;
+            labels = getWeekLabels();
+            money = days;
+        }
+        else if (view === VIEW_TYPE.YEAR)
+        {
+            labels = getYearLabels();
+            money = months;
+        }
+        else
+        {
+            return false;
         }
 
-        money = money || 0;
 
         const datasets = [
             {
@@ -272,13 +283,14 @@ export const buildVisitorGraph = async function (pathname, {$chart, title, subTi
     return false;
 };
 
-export const buildMoneyGraph = async function (pathname, {$chart, title, subTitle})
+export const buildEarningsGraph = async function (pathname, {$chart, title, subTitle, view})
 {
     try
     {
         // Build DOM element
-        await buildMoneyChart(CHART_DATA_FILES.MONEY_DATA_FILENAME,
+        await buildMoneyChart(CHART_DATA_FILES.EARNING_DATA_FILENAME,
             {
+                view,
                 $chart,
                 style1: {
                     backgroundColor: "rgb(180,181,217)",

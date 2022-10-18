@@ -1,3 +1,4 @@
+const CURRENT_YEAR = (new Date()).getFullYear();
 const SUB_DATA_DIR = "data";
 
 const MEANINGFUL_LOG_FILES = {
@@ -16,7 +17,8 @@ const CHART_DATA_FILES = {
     HITS_DATA_FILENAME     : `charts/hits.json`,
     TODAY_DATA_FILENAME    : `charts/today.json`,
     WEEK_DATA_FILENAME     : `charts/week.json`,
-    MONEY_DATA_FILENAME    : `charts/money.json`,
+    YEAR_DATA_FILENAME     : `charts/${CURRENT_YEAR}-visitors.json`,
+    EARNING_DATA_FILENAME  : `charts/${CURRENT_YEAR}-earning.json`,
     BROWSERS_DATA_FILENAME : `charts/browser-popularity.json`,
     OSES_DATA_FILENAME     : `charts/os-popularity.json`,
     LANGUAGES_DATA_FILENAME: `charts/language-popularity.json`,
@@ -30,6 +32,11 @@ const CHART_TYPE = {
     TABLE: "table"
 };
 
+const VIEW_TYPE = {
+    WEEK: "week",
+    YEAR: "year"
+};
+
 const INIT_DATA_CHART = "{}";
 
 module.exports.MEANINGFUL_LOG_FILES = MEANINGFUL_LOG_FILES;
@@ -40,3 +47,5 @@ module.exports.CHART_DATA_FILES = CHART_DATA_FILES;
 
 module.exports.INIT_DATA_CHART = INIT_DATA_CHART;
 module.exports.SUB_DATA_DIR = SUB_DATA_DIR;
+
+module.exports.VIEW_TYPE = VIEW_TYPE;
