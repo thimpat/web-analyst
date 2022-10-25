@@ -1,7 +1,17 @@
 {
   "name": "web-analyst",
-  "version": "2.1.1",
+  "version": "2.1.3",
   "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
+  "author": {
+    "name": "Patrice THIMOTHEE",
+    "email": "thimpat@gmail.com",
+    "url": "https://github.com/thimpat/thimpat/wiki"
+  },
+  "bugs": {
+    "url": "https://github.com/thimpat/web-analyst/issues",
+    "email": "thimpat@gmail.com"
+  },
+  "homepage": "https://github.com/thimpat/web-analyst",
   "main": "index.cjs",
   "type": "module",
   "scripts": {
@@ -26,7 +36,6 @@
     "web analytics",
     "web analyst"
   ],
-  "author": "Patrice THIMOTHEE <thimpat@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@thimpat/libutils": "^1.13.0",
