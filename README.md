@@ -12,6 +12,7 @@ npm install web-analyst
 
 ## 2. Notes
 
+* **v3** works with Genserve v5 only (Recommended)
 * **v2** works with Genserve (https://www.npmjs.com/package/genserve)
 * **v1** works with Express but is not maintained
 
