@@ -25,22 +25,39 @@ const loginSession = function (id,  {res, expiration = Date.now() + 3600 * 1000,
     return false;
 };
 
-const logoutSession = function (req, res, {loggable = null} = {})
+const isLogout = function (req)
 {
     try
     {
+        if (!req)
+        {
+            return false;
+        }
+
         if (!req.headers)
         {
-            return res.end(JSON.stringify({success: true, message: `User is already logged out`}));
+            return false;
         }
 
-        const cookieString = req.headers.cookie;
-        if (!cookieString)
-        {
-            return res.end(JSON.stringify({success: true, message: `User is already logged out`}));
-        }
+        return req.headers.cookie;
+    }
+    catch (e)
+    {
+        console.error({lid: 1233}, e.message);
+    }
 
+    return false;
+};
+
+const logoutSession = function (req, res, {loggable = null, errorMessage = ""} = {})
+{
+    try
+    {
         res.setHeader("Set-Cookie", [`token=; HttpOnly`, `maxAge=0`]);
+        if (isLogout(req) && errorMessage)
+        {
+            return res.end(JSON.stringify({success: true, message: errorMessage ?? `User is already logged out`}));
+        }
 
         return true;
     }
@@ -89,6 +106,8 @@ const getSessionInfo = async function (req, {loggable = null} = {})
 
 module.exports.getSessionInfo = getSessionInfo;
 
+
+module.exports.isLogout = isLogout;
 
 module.exports.logoutSession = logoutSession;
 module.exports.loginSession = loginSession;

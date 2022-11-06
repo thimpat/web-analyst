@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 
 const {parseData} = require("./helpers/connection-helpers.cjs");
-const {loginSession, logoutSession} = require("./helpers/auth-helpers.cjs");
+const {loginSession, logoutSession, isLogout} = require("./helpers/auth-helpers.cjs");
 const {getPluginOptions} = require("./helpers/plugin-helpers.cjs");
 
 let content = null;
@@ -87,20 +87,36 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
         const data = await parseData(req);
         if (!data)
         {
-            res.end(JSON.stringify({success: false, message: "Information missing in request"}));
+            const message = "Information missing in request";
+            if (!isLogout(req))
+            {
+                logoutSession(req, res, {loggable});
+            }
+            res.end(JSON.stringify({success: false, message}));
             return;
         }
 
         if (data.random !== "" + random)
         {
-            res.end(JSON.stringify({success: false, message: "Incorrect data. Please, reload the page"}));
+            const message = "Incorrect data. Please, reload the page";
+            if (!isLogout(req))
+            {
+                logoutSession(req, res, {loggable});
+            }
+            res.end(JSON.stringify({success: false, message}));
             return;
         }
 
         if (!pluginOptions && !pluginOptions.credentials)
         {
+            const message = "Server error. Please, try again later";
+            if (!isLogout(req))
+            {
+                logoutSession(req, res, {loggable});
+            }
+
             // The developer has not set a credential file
-            res.end(JSON.stringify({success: false, message: "Server error. Please, try again later"}));
+            res.end(JSON.stringify({success: false, message}));
             return;
         }
 
@@ -109,6 +125,12 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
         const currentPassword = creds[data.username]?.password;
         if (!creds.hasOwnProperty(data.username) || data.password !== currentPassword)
         {
+            const message = "Login failed";
+            if (!isLogout(req))
+            {
+                logoutSession(req, res, {loggable});
+            }
+
             res.end(JSON.stringify({success: false, message: "Login failed"}));
             return;
         }
@@ -118,11 +140,17 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
         let destination, message;
         if (success)
         {
-            destination = success ? "/automator.tests/index.html": "";
+            destination = success ? `/${session.serverName}.${session.namespace}/index.html` : "";
         }
         else
         {
-            message = "Login failed";
+            const message = "Login failed";
+            if (!isLogout(req))
+            {
+                logoutSession(req, res, {loggable});
+            }
+            res.end(JSON.stringify({success: false, message}));
+            return;
         }
 
         return res.end(JSON.stringify({success, message, destination}));
@@ -153,8 +181,6 @@ const onRequest = async (req, res, {session, loggable}) =>
     }
     else if (req.method === "POST")
     {
-        logoutSession(req, res);
-
         const pluginOptions = getPluginOptions({session, pluginName: "web-analyst", loggable});
         await checkRequest(req, res, {session, pluginOptions, loggable});
         return null;
