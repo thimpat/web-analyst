@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: arial, sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .message {
+            color: #bb6443;
+        }
+    </style>
+</head>
+<body>
+
+<form action="/login.server.cjs" id="myForm" method="post">
+
+    <label for="username">Username</label>
+    <input class="username" id="username" name="username" type="text">
+
+    <label for="password">Password</label>
+    <input class="password" id="password" name="password" type="password">
+
+    <input type="hidden" name="random" value="{{random}}">
+
+    <input type="submit" value="Submit">
+    <span class="message" id="message"></span>
+</form>
+
+<script>
+    async function validateForm(event)
+    {
+        try
+        {
+            event.preventDefault();
+
+            const form = document.querySelector('#myForm');
+            const url = form.action;
+
+            // Data from the form
+            const formData = new FormData(form);
+            const username = formData.get("username");
+            const password = formData.get("password");
+            const random = formData.get("random");
+
+            // Send credentials
+            const response = await fetch(url, {
+                method : "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body   : JSON.stringify({
+                    username,
+                    password,
+                    random
+                }),
+            });
+
+            const {success, message, destination} = await response.json();
+            if (!success)
+            {
+                document.getElementById("message").textContent = message;
+                return
+            }
+
+            window.location.assign(destination);
+            debugger
+        }
+        catch (e)
+        {
+            console.error(e);
+        }
+
+        return false;
+    }
+
+    document.getElementById("myForm").addEventListener("submit", validateForm)
+
+</script>
+
+</body>
+</html>
