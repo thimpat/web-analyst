@@ -8,7 +8,7 @@ const {joinPath, convertToUrl} = require("@thimpat/libutils");
 
 const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
-const {isPagePattern} = require("./lib/utils/patterns.cjs");
+const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 
 /**
  * Harvest data
@@ -28,6 +28,11 @@ function trackData(req, res, {headers = {}, ip} = {})
         for (let k in infoReq)
         {
             infoReq[k] = infoReq[k] || "";
+        }
+
+         if (isIgnorePattern(infoReq.pathname))
+        {
+            return;
         }
 
          if (!isPagePattern(infoReq.pathname))
