@@ -4,6 +4,8 @@
 const url = require("url");
 const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
 const minimist = require("minimist");
+const {joinPath, convertToUrl} = require("@thimpat/libutils");
+
 const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern} = require("./lib/utils/patterns.cjs");
@@ -113,6 +115,62 @@ function init()
     return false;
 }
 
+/**
+ * Same thread as the server.
+ * The server will wait for onInit to complete
+ * @param pluginOptions
+ * @param session
+ * @param loggable
+ * @returns {boolean}
+ */
+const onInit = async function ({options: pluginOptions, session, loggable})
+{
+    try
+    {
+        let dir = pluginOptions.staticDirs || pluginOptions.dir || ["./stats/"];
+        if (!Array.isArray(dir))
+        {
+            dir = [dir];
+        }
+
+        const authDir = joinPath(__dirname, "auth/");
+
+        // Update staticDirs to add web/ folder
+        pluginOptions.staticDirs = dir;
+
+        // Update dynamicDirs to add auth/ folder
+        pluginOptions.dynamicDirs = [authDir];
+
+        // Add validator to allow the server restricting the added static directory
+        pluginOptions.validators = [joinPath(authDir, "validate.server.cjs")];
+
+        // File (json or js) containing allowed user map
+        pluginOptions.credentials = pluginOptions.credentials || joinPath(authDir, "creds.cjs");
+
+        // Errors
+        pluginOptions.errors = pluginOptions.errors || {};
+        pluginOptions.errors["401"] = pluginOptions.errors["401"] || {};
+        pluginOptions.errors["401"] = {
+            "message" : "Not logged in",
+            "pathname": "/login.server.cjs"
+        };
+
+        const serverUrl = convertToUrl(session);
+        const statDir = session.serverName + "." + session.namespace;
+        pluginOptions.url = serverUrl + statDir + "/index.html";
+
+        loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
+
+        return true;
+    }
+    catch (e)
+    {
+        loggable.error({lid: 7547}, e.message);
+    }
+
+    return false;
+};
+
 (async function ()
 {
     try
@@ -125,3 +183,5 @@ function init()
     }
 
 }());
+
+module.exports.onInit = onInit;
