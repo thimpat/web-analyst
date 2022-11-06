@@ -26,7 +26,7 @@
 
     <input type="hidden" name="random" value="{{random}}">
 
-    <input id="submit-button" type="submit" value="Submit">
+    <input id="submit-button" name="submit-button" type="submit" value="Submit">
     <span class="message" id="message"></span>
 </form>
 
@@ -46,6 +46,20 @@
             const password = formData.get("password");
             const random = formData.get("random");
 
+            const $message = document.querySelector('#message');
+
+            if (!username)
+            {
+                $message.textContent = `The username field is mandatory`;
+                return false;
+            }
+
+            if (!password)
+            {
+                $message.textContent = `The password field is mandatory`;
+                return false;
+            }
+
             // Send credentials
             const response = await fetch(url, {
                 method : "POST",
@@ -63,11 +77,17 @@
             if (!success)
             {
                 document.getElementById("message").textContent = message;
-                return
+                return false;
+            }
+
+            if (!destination)
+            {
+                document.getElementById("message").textContent = message;
+                return false;
             }
 
             window.location.assign(destination);
-            debugger
+            return true;
         }
         catch (e)
         {
