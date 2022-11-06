@@ -29,21 +29,28 @@ $> npm install genserve -g
 
 <br/>
 
+##### Install Web-analyst
+
+```
+$> npm install web-analyst -g
+```
+
+<br/>
+
 ##### Create a genserve config file and add a plugin section
 
 ```json
-  "plugins": [
+"plugins" : [
     {
-      "./node_modules/web-analyst/index.cjs": {
-        "dir": "./stats/",
-        "pages": [".*\\.html\\b", "\\/$"],
-        "earnings": ["\\?p=(.*)"]
-      }
-    }],
+    	"name": "web-analyst",
+		"pages" : [ ".*\\.html\\b", "\\/$" ],
+		"earnings" : [ "\\?p=(.*)" ]
+	}
+]
 ```
 
-* dir    : Directory where the generated assets will be installed
-* pages  : Regex list for taking into account when generating charts
+* name   : Plugin name
+* pages  : Regex list for defining which pages need to be taken into account in the statistics
 * earning: Pattern to identify earnings
 
 <br/>
