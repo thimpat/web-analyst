@@ -1,22 +1,40 @@
 const jsonwebtoken = require("jsonwebtoken");
 
+let secretToken = process.env.JWT_SECRET_TOKEN;
+
+/**
+ * @returns {*|string}
+ */
 const getJwtSecretToken = () =>
 {
-    return process.env.JWT_SECRET_TOKEN;
+    return secretToken;
 };
+
+const setJwtSecretToken = (token) =>
+{
+    secretToken = token;
+};
+
 
 /**
  *
  * @param id
  * @param {"HS256"|"RS256"|"HS384"|"HS512"|"RS512"|"PS256"|"PS384"|"PS512"|"ES256"|"ES384"|"ES512"|"none"} [algorithm="RS256"]
  * @param expiration
- * @returns {string}
+ * @param loggable
+ * @returns {string|null}
  */
-const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 * 60)} = {}) =>
+const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 * 60), loggable = null} = {}) =>
 {
     try
     {
         let jwtSecretKey = getJwtSecretToken();
+        if (!jwtSecretKey)
+        {
+            loggable.error({lid: 1001}, `Server error. Could not generate token`);
+            return null;
+        }
+
         let data = {
             exp: expiration,
             id
@@ -26,7 +44,7 @@ const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 *
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        loggable.error({lid: 1003}, e.message);
     }
 
     return null;
@@ -38,8 +56,9 @@ const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 *
  * @returns {Promise<*>}
  * @param token
  * @param algorithm
+ * @param loggable
  */
-const decodeToken = async (token, {algorithm = "HS256"} = {}) =>
+const decodeToken = async (token, {algorithm = "HS256", loggable = null} = {}) =>
 {
     try
     {
@@ -48,12 +67,14 @@ const decodeToken = async (token, {algorithm = "HS256"} = {}) =>
     }
     catch (err)
     {
-        console.error(e);
+        loggable.error(err);
     }
 
     return null;
 };
 
 module.exports.getJwtSecretToken = getJwtSecretToken;
+module.exports.setJwtSecretToken = setJwtSecretToken;
+
 module.exports.generateToken = generateToken;
 module.exports.decodeToken = decodeToken;

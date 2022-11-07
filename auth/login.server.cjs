@@ -6,6 +6,11 @@ const {loginSession, logoutSession, isLogout} = require("./helpers/auth-helpers.
 const {getPluginOptions} = require("./helpers/plugin-helpers.cjs");
 
 let content = null;
+
+/**
+ * Not a real CSRF, but will do for one unique user
+ * @type {null}
+ */
 let random = null;
 
 // ---------------------------------------------
@@ -77,6 +82,8 @@ const showLoginPage = (req, res, {session, loggable = null} = {}) =>
  *
  * @param req
  * @param res
+ * @param session
+ * @param pluginOptions
  * @param loggable
  * @returns {Promise<*>}
  */
@@ -131,7 +138,7 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
                 logoutSession(req, res, {loggable});
             }
 
-            res.end(JSON.stringify({success: false, message: "Login failed"}));
+            res.end(JSON.stringify({success: false, message}));
             return;
         }
 
