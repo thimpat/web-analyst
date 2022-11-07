@@ -142,7 +142,7 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
             return;
         }
 
-        let success = loginSession(data.username, {req, res, session, creds});
+        let success = loginSession(data.username, {req, res, session, creds, loggable});
 
         let destination, message;
         if (success)

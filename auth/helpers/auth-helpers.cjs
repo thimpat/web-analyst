@@ -9,7 +9,7 @@ const {parseCookie} = require("./connection-helpers.cjs");
  * @param loggable
  * @returns {boolean}
  */
-const loginSession = function (id, {res, expiration = Date.now() + 3600 * 1000, loggable = console} = {})
+const loginSession = function (id, {res, expiration = Date.now() + 3600 * 1000, loggable = null} = {})
 {
     try
     {
