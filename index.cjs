@@ -9,6 +9,7 @@ const {joinPath, convertToUrl} = require("@thimpat/libutils");
 const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
+const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
 
 /**
  * Harvest data
@@ -139,6 +140,18 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         }
 
         const authDir = joinPath(__dirname, "auth/");
+
+        if (!process.env.JWT_SECRET_TOKEN)
+        {
+            if (pluginOptions.token)
+            {
+                setJwtSecretToken(pluginOptions.token);
+            }
+            else
+            {
+                setJwtSecretToken(Math.random() * 99999999 + "");
+            }
+        }
 
         // Update staticDirs to add web/ folder
         pluginOptions.staticDirs = dir;

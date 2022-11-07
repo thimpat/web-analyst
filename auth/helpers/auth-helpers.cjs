@@ -9,11 +9,11 @@ const {parseCookie} = require("./connection-helpers.cjs");
  * @param loggable
  * @returns {boolean}
  */
-const loginSession = function (id,  {res, expiration = Date.now() + 3600 * 1000, loggable = console} = {})
+const loginSession = function (id, {res, expiration = Date.now() + 3600 * 1000, loggable = console} = {})
 {
     try
     {
-        const token = generateToken(id, {res, expiration});
+        const token = generateToken(id, {res, expiration, loggable});
         res.setHeader("Set-Cookie", [`token=${token}; HttpOnly`, `expires=${new Date(expiration)}`]);
         return true;
     }
@@ -27,26 +27,17 @@ const loginSession = function (id,  {res, expiration = Date.now() + 3600 * 1000,
 
 const isLogout = function (req)
 {
-    try
+    if (!req)
     {
-        if (!req)
-        {
-            return false;
-        }
-
-        if (!req.headers)
-        {
-            return false;
-        }
-
-        return req.headers.cookie;
-    }
-    catch (e)
-    {
-        console.error({lid: 1233}, e.message);
+        return false;
     }
 
-    return false;
+    if (!req.headers)
+    {
+        return false;
+    }
+
+    return !!req.headers.cookie;
 };
 
 const logoutSession = function (req, res, {loggable = null, errorMessage = ""} = {})
@@ -86,7 +77,11 @@ const getSessionInfo = async function (req, {loggable = null} = {})
             return {success: false, message: "User is not logged in"};
         }
 
-        const decrypt = await decodeToken(token);
+        const decrypt = await decodeToken(token, {loggable});
+        if (!decrypt)
+        {
+            return {success: false, message: "User session invalid"};
+        }
 
         // Json token expired
         if (decrypt.exp < Date.now())
