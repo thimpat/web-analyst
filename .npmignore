@@ -115,6 +115,7 @@ crashlytics-build.properties
 /.idea/
 /.eslintrc.cjs
 /web/css/stats.scss
-*.tgz/
-.vscode/
+*.tgz
+/.vscode/
 
+*tgz
