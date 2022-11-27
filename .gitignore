@@ -89,3 +89,5 @@ dist
 /my-server.web/
 /my-server.web.zip
 /.idea/
+/.vscode/
+*.tgz
