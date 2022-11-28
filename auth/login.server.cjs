@@ -103,16 +103,16 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
             return;
         }
 
-        if (data.random !== "" + random)
-        {
-            const message = "Incorrect data. Please, reload the page";
-            if (!isLogout(req))
-            {
-                logoutSession(req, res, {loggable});
-            }
-            res.end(JSON.stringify({success: false, message}));
-            return;
-        }
+        // if (data.random !== "" + random)
+        // {
+        //     const message = "Incorrect data. Please, reload the page";
+        //     if (!isLogout(req))
+        //     {
+        //         logoutSession(req, res, {loggable});
+        //     }
+        //     res.end(JSON.stringify({success: false, message}));
+        //     return;
+        // }
 
         if (!pluginOptions && !pluginOptions.credentials)
         {
