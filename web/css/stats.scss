@@ -12,25 +12,22 @@ body
 
   .section
   {
-    margin-bottom: 50px;
-    margin-top: 50px;
+    margin-bottom: 10px;
+    margin-top: 10px;
 
     &.bar
     {
-      margin: 100px auto;
     }
 
     &.pie
     {
-      margin: 100px auto;
-      max-width: 600px;
     }
 
     &.table
     {
       font-family: sans-serif;
       font-size: 0.9rem;
-      margin: 100px auto;
+
       .tabulator-row
       {
         padding: 8px 0;
