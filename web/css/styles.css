@@ -11700,3 +11700,10 @@ body {
   font-size: 0.75rem;
   border-radius: 0.25rem !important;
 }
+
+.layoutAuthentication_footer
+{
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}
