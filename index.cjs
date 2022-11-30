@@ -176,6 +176,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         const serverUrl = convertToUrl(session);
         const statDir = session.serverName + "." + session.namespace;
         pluginOptions.url = serverUrl + statDir + "/index.html";
+        pluginOptions.url = serverUrl + "login.server.cjs";
 
         loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
