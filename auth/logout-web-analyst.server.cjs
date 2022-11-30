@@ -6,7 +6,7 @@ const checkRequest = async (req, res, {loggable = null} = {}) =>
     {
         logoutSession(req, res, {loggable});
 
-        res.writeHead(302, {Location: "/login.server.cjs"});
+        res.writeHead(302, {Location: "/login-web-analyst.server.cjs"});
         return res.end(JSON.stringify({success: true, message: `User logout successfully`}));
     }
     catch (e)
