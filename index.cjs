@@ -142,6 +142,8 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         }
 
         const authDir = joinPath(__dirname, "auth/");
+        // const dynDir = joinPath(authDir, "wanalyst");
+        const dynDir = authDir;
 
         if (!process.env.JWT_SECRET_TOKEN)
         {
@@ -162,17 +164,17 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         pluginOptions.dynamicDirs = [authDir];
 
         // Add validator to allow the server restricting the added static directory
-        pluginOptions.validators = pluginOptions.validators || [joinPath(authDir, "validate.cjs")];
+        pluginOptions.validators = pluginOptions.validators || [joinPath(dynDir, "validate.cjs")];
 
         // File (json or js) containing allowed user map
-        pluginOptions.credentials = pluginOptions.credentials || joinPath(authDir, "creds.cjs");
+        pluginOptions.credentials = pluginOptions.credentials || joinPath(dynDir, "creds.cjs");
 
         // Errors
         pluginOptions.errors = pluginOptions.errors || {};
         pluginOptions.errors["401"] = pluginOptions.errors["401"] || {};
         pluginOptions.errors["401"] = {
             "message" : "Not logged in",
-            "pathname": "/login-web-analyst.server.cjs"
+            "pathname": "/login-wwb-analyst.server.cjs"
         };
 
         const serverUrl = convertToUrl(session);
