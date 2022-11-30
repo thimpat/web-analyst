@@ -94,17 +94,18 @@ function onGenserveMessage({action, req, res, headers, connection, socket, data,
 /**
  * Set up the engine
  */
-function init()
+function setupEngine({session, options})
 {
     try
     {
-        const argv = minimist(process.argv.slice(2));
-
-        setSession(argv.session);
-        setOptions(argv.options);
+        setSession(session);
 
         const server = getSessionProperty("serverName");
         const namespace = getSessionProperty("namespace");
+
+        // By default, we ignore the stats page
+        const statDir = "/" + server + "." + namespace + "/";
+        setOptions(options, {ignore: statDir});
 
         startLogEngine(server, namespace);
 
@@ -122,8 +123,9 @@ function init()
 }
 
 /**
- * Same thread as the server.
+ * Run in the same thread as the server.
  * The server will wait for onInit to complete
+ * @note Called before launching the plugin engine in a separate thread (process)
  * @param pluginOptions
  * @param session
  * @param loggable
@@ -174,8 +176,8 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         };
 
         const serverUrl = convertToUrl(session);
-        const statDir = session.serverName + "." + session.namespace;
-        pluginOptions.url = serverUrl + statDir + "/index.html";
+        // const statDir = session.serverName + "." + session.namespace;
+        // pluginOptions.url = serverUrl + statDir + "/index.html";
         pluginOptions.url = serverUrl + "login.server.cjs";
 
         loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
@@ -189,6 +191,35 @@ const onInit = async function ({options: pluginOptions, session, loggable})
 
     return false;
 };
+
+/**
+ * This method is called when genserve forks this plugin
+ * or when genserve invokes importScriptByType
+ * @returns {boolean}
+ */
+function init()
+{
+    try
+    {
+        const argv = minimist(process.argv.slice(2));
+
+        // Ignore operations from genserve#importScriptByType
+        if (!argv.session)
+        {
+            return true;
+        }
+
+        setupEngine(argv);
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2187}, e.message);
+    }
+
+    return false;
+}
 
 (async function ()
 {
