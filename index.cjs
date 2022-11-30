@@ -172,13 +172,13 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         pluginOptions.errors["401"] = pluginOptions.errors["401"] || {};
         pluginOptions.errors["401"] = {
             "message" : "Not logged in",
-            "pathname": "/login.server.cjs"
+            "pathname": "/login-web-analyst.server.cjs"
         };
 
         const serverUrl = convertToUrl(session);
         // const statDir = session.serverName + "." + session.namespace;
         // pluginOptions.url = serverUrl + statDir + "/index.html";
-        pluginOptions.url = serverUrl + "login.server.cjs";
+        pluginOptions.url = serverUrl + "login-web-analyst.server.cjs";
 
         loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
