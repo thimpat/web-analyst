@@ -162,7 +162,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         pluginOptions.dynamicDirs = [authDir];
 
         // Add validator to allow the server restricting the added static directory
-        pluginOptions.validators = [joinPath(authDir, "validate.server.cjs")];
+        pluginOptions.validators = pluginOptions.validators || [joinPath(authDir, "validate.cjs")];
 
         // File (json or js) containing allowed user map
         pluginOptions.credentials = pluginOptions.credentials || joinPath(authDir, "creds.cjs");
