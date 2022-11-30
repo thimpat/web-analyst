@@ -26,7 +26,8 @@ const generateHTML = ({loggable}) =>
     {
         // Load an HTML template compatible with Handlebars
         // They are not precompiled and therefore not optimised
-        const contentPath = path.join(__dirname, "./templates/login.hbs");
+        // const contentPath = path.join(__dirname, "./templates/login.hbs");
+        const contentPath = path.join(__dirname, "../web/login.hbs");
         content = fs.readFileSync(contentPath, {encoding: "utf-8"});
         return content;
     }
