@@ -15,8 +15,8 @@ const onValidate = async (req, res, {loggable = null} = {}) =>
             return {allowed: false};
         }
 
-        const {success} = await getSessionInfo(req, {loggable});
-        return {allowed: success};
+        const {success, message, code} = await getSessionInfo(req, {loggable});
+        return {allowed: success, message, code};
     }
     catch (e)
     {
