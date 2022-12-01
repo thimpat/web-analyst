@@ -174,7 +174,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         pluginOptions.errors["401"] = pluginOptions.errors["401"] || {};
         pluginOptions.errors["401"] = {
             "message" : "Not logged in",
-            "pathname": "/login-wwb-analyst.server.cjs"
+            "pathname": "/login-web-analyst.server.cjs"
         };
 
         const serverUrl = convertToUrl(session);
