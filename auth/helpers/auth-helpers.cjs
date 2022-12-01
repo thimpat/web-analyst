@@ -67,26 +67,26 @@ const getSessionInfo = async function (req, {loggable = null} = {})
         const cookieString = req.headers.cookie;
         if (!cookieString)
         {
-            return {success: false, message: "User has not logged in"};
+            return {success: false, message: "User has not logged in", code: 401};
         }
 
         const result = parseCookie(cookieString);
         const token = result.token || "";
         if (!token)
         {
-            return {success: false, message: "User is not logged in"};
+            return {success: false, message: "User is not logged in", code: 401};
         }
 
         const decrypt = await decodeToken(token, {loggable});
         if (!decrypt)
         {
-            return {success: false, message: "User session invalid"};
+            return {success: false, message: "User session invalid", code: 401};
         }
 
         // Json token expired
         if (decrypt.exp < Date.now())
         {
-            return {success: false, message: "Session has expired"};
+            return {success: false, message: "Session has expired", code: 401};
         }
 
         return {success: true};
@@ -96,7 +96,7 @@ const getSessionInfo = async function (req, {loggable = null} = {})
         loggable.error({lid: 1235}, e.message);
     }
 
-    return {success: false, message: "Error during session parsing"};
+    return {success: false, message: "Error during session parsing in web-analyst plugin", code: 500};
 };
 
 module.exports.getSessionInfo = getSessionInfo;
