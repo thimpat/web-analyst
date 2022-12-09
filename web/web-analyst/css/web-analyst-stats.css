@@ -9,23 +9,15 @@ body {
   width: 60%;
 }
 .container .section {
-  margin-bottom: 50px;
-  margin-top: 50px;
-}
-.container .section.bar {
-  margin: 100px auto;
-}
-.container .section.pie {
-  margin: 100px auto;
-  max-width: 600px;
+  margin-bottom: 10px;
+  margin-top: 10px;
 }
 .container .section.table {
   font-family: sans-serif;
   font-size: 0.9rem;
-  margin: 100px auto;
 }
 .container .section.table .tabulator-row {
   padding: 8px 0;
 }
 
-/*# sourceMappingURL=stats.css.map */
+/*# sourceMappingURL=web-analyst-stats.css.map */

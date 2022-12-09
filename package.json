@@ -1,6 +1,6 @@
 {
   "name": "web-analyst",
-  "version": "2.1.3",
+  "version": "3.1.0",
   "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
   "author": {
     "name": "Patrice THIMOTHEE",
@@ -15,7 +15,7 @@
   "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "build:all": "to-esm hybrid/cjs/*.cjs --output ./web/js && to-esm lib/common.cjs --output ./web/js",
+    "build:all": "to-esm hybrid/cjs/*.cjs --output web/web-analyst/js && to-esm lib/common.cjs --output ./web/js",
     "run:stats": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats2": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/web-analyst/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats3": "npm run build:all && npx --yes genserve@latest restart --dir web --dir C:/projects/genserve/stats/genserve.projects --port 8080"
@@ -42,6 +42,7 @@
     "accept-language-parser": "^1.5.0",
     "chart.js": "^1.1.1",
     "clonefile": "^3.2.2",
+    "jsonwebtoken": "^8.5.1",
     "minimist": "^1.2.7",
     "tabulator-tables": "^5.4.1",
     "ua-parser-js": "^0.7.9",

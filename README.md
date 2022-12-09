@@ -12,6 +12,7 @@ npm install web-analyst
 
 ## 2. Notes
 
+* **v3** works with Genserve v5 (Recommended)
 * **v2** works with Genserve (https://www.npmjs.com/package/genserve)
 * **v1** works with Express but is not maintained
 
@@ -29,22 +30,31 @@ $> npm install genserve -g
 
 <br/>
 
+##### Install Web-analyst
+
+```
+$> npm install web-analyst
+```
+
+<br/>
+
 ##### Create a genserve config file and add a plugin section
 
 ```json
-  "plugins": [
+"plugins" : [
     {
-      "./node_modules/web-analyst/index.cjs": {
-        "dir": "./stats/",
+        "name": "web-analyst",
         "pages": [".*\\.html\\b", "\\/$"],
-        "earnings": ["\\?p=(.*)"]
-      }
-    }],
+        "earnings": ["\\?p=(.*)"],
+        "ignore": ["something.html"]
+    }
+]
 ```
 
-* dir    : Directory where the generated assets will be installed
-* pages  : Regex list for taking into account when generating charts
+* name   : Plugin name
+* pages  : Regex list for defining which pages need to be taken into account in the statistics
 * earning: Pattern to identify earnings
+* ignore : Pattern to identify pages to ignore
 
 <br/>
 
