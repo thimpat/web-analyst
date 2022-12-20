@@ -4,6 +4,7 @@ const fs = require("fs");
 const {parseData} = require("./helpers/connection-helpers.cjs");
 const {loginSession, logoutSession, isLogout} = require("./helpers/auth-helpers.cjs");
 const {getPluginOptions} = require("./helpers/plugin-helpers.cjs");
+const {joinPath} = require("@thimpat/libutils");
 
 let content = null;
 
@@ -128,7 +129,13 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
             return;
         }
 
-        const creds = require(pluginOptions.credentials) || {};
+        let credentialsPath = pluginOptions.credentials;
+        if (!path.isAbsolute(credentialsPath))
+        {
+            credentialsPath = joinPath(process.cwd(), credentialsPath);
+        }
+
+        const creds = require(credentialsPath) || {};
 
         const currentPassword = creds[data.username]?.password;
         if (!creds.hasOwnProperty(data.username) || data.password !== currentPassword)
