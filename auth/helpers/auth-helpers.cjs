@@ -40,6 +40,14 @@ const isLogout = function (req)
     return !!req.headers.cookie;
 };
 
+/**
+ * Logout user from the session
+ * @param req
+ * @param res
+ * @param {Loggable} loggable
+ * @param errorMessage
+ * @returns {*|boolean}
+ */
 const logoutSession = function (req, res, {loggable = null, errorMessage = ""} = {})
 {
     try
