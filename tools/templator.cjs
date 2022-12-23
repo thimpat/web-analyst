@@ -1,4 +1,4 @@
-const {existsSync, readFileSync, writeFileSync, mkdirSync} = require("fs");
+const {existsSync, readFileSync, writeFileSync, mkdirSync, statSync} = require("fs");
 
 const glob = require("glob");
 
@@ -19,7 +19,6 @@ mkdirSync(outputDir, {recursive: true});
 
 // options is optional
 const files = glob.sync(`**/*`, {
-    nodir : true,
     cwd   : templatesDir
 });
 
@@ -27,6 +26,16 @@ for (let i = 0; i < files.length; ++i)
 {
     const originalFile = joinPath(templatesDir, files[i]);
     const targetFile = joinPath(outputDir, files[i]);
+
+    if (statSync(originalFile).isDirectory())
+    {
+        if (!existsSync(targetFile))
+        {
+            mkdirSync(targetFile, {recursive: true});
+        }
+        continue;
+    }
+
 
     const initialContent = readFileSync(originalFile, {encoding: "utf-8"});
 
