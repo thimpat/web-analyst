@@ -1,6 +1,5 @@
 const {existsSync, readFileSync, writeFileSync, mkdirSync} = require("fs");
 
-const shell = require("shelljs");
 const glob = require("glob");
 
 const {joinPath} = require("@thimpat/libutils");
@@ -8,7 +7,6 @@ const {joinPath} = require("@thimpat/libutils");
 
 const rootDir = joinPath(__dirname, "..");
 process.chdir(rootDir);
-shell.cd(rootDir);
 
 const packageJsonPath = joinPath(rootDir, "package.json");
 const packageJson = require(packageJsonPath);
