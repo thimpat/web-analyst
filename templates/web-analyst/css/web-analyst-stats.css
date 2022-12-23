@@ -1,0 +1,23 @@
+body {
+  height: 100%;
+}
+
+.container {
+  display: block;
+  margin: auto;
+  min-width: 400px;
+  width: 60%;
+}
+.container .section {
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+.container .section.table {
+  font-family: sans-serif;
+  font-size: 0.9rem;
+}
+.container .section.table .tabulator-row {
+  padding: 8px 0;
+}
+
+/*# sourceMappingURL=web-analyst-stats.css.map */
