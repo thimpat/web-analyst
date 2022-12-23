@@ -116,26 +116,30 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
         //     return;
         // }
 
-        if (!pluginOptions && !pluginOptions.credentials)
+        let creds = pluginOptions.users;
+        if (!creds)
         {
-            const message = "Server error. Please, try again later";
-            if (!isLogout(req))
+            if (!pluginOptions && !pluginOptions.credentials)
             {
-                logoutSession(req, res, {loggable});
+                const message = "Server error. Please, try again later";
+                if (!isLogout(req))
+                {
+                    logoutSession(req, res, {loggable});
+                }
+
+                // The developer has not set a credential file
+                res.end(JSON.stringify({success: false, message}));
+                return;
             }
 
-            // The developer has not set a credential file
-            res.end(JSON.stringify({success: false, message}));
-            return;
-        }
+            let credentialsPath = pluginOptions.credentials;
+            if (!path.isAbsolute(credentialsPath))
+            {
+                credentialsPath = joinPath(process.cwd(), credentialsPath);
+            }
 
-        let credentialsPath = pluginOptions.credentials;
-        if (!path.isAbsolute(credentialsPath))
-        {
-            credentialsPath = joinPath(process.cwd(), credentialsPath);
+            creds = require(credentialsPath) || {};
         }
-
-        const creds = require(credentialsPath) || {};
 
         const currentPassword = creds[data.username]?.password;
         if (!creds.hasOwnProperty(data.username) || data.password !== currentPassword)
