@@ -15,7 +15,8 @@
   "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "build:all": "to-esm hybrid/cjs/*.cjs --output web/web-analyst/js && to-esm lib/common.cjs --output ./web/js",
+    "build:template": "node tools/templator.cjs",
+    "build:all": "npm run build:template && to-esm hybrid/cjs/*.cjs --output web/web-analyst/js && to-esm lib/common.cjs --output ./web/js",
     "run:stats": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats2": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/web-analyst/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats3": "npm run build:all && npx --yes genserve@latest restart --dir web --dir C:/projects/genserve/stats/genserve.projects --port 8080"
@@ -56,6 +57,7 @@
   ],
   "devDependencies": {
     "eslint": "^8.25.0",
+    "glob": "^8.0.3",
     "to-esm": "^2.24.1"
   }
 }
