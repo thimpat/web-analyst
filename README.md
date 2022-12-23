@@ -1,9 +1,9 @@
-
 # Web-Analyst
-Web Analyst is a plugin for Genserve
+
+Web Analyst is a plugin for Genserve.
 
 ## 1. Installation
-   
+
 npm install web-analyst
 
 <br/>
@@ -41,20 +41,56 @@ $> npm install web-analyst
 ##### Create a genserve config file and add a plugin section
 
 ```json
-"plugins" : [
+{
+  "plugins": [
     {
-        "name": "web-analyst",
-        "pages": [".*\\.html\\b", "\\/$"],
-        "earnings": ["\\?p=(.*)"],
-        "ignore": ["something.html"]
+      "name": "web-analyst",
+      "modulename": "web-analyst@latest",
+      "pages": [
+        ".*\\.html\\b",
+        "\\/$"
+      ],
+      "earnings": [
+        "\\?p=(.*)"
+      ],
+      "ignore": [
+        "something.html"
+      ],
+      "users": {
+        "admin": {
+          "password": "admin"
+        },
+        "some-email@example.com": {
+          "password": "secret"
+        }
+      }
     }
-]
+  ]
+}
 ```
 
-* name   : Plugin name
-* pages  : Regex list for defining which pages need to be taken into account in the statistics
-* earning: Pattern to identify earnings
-* ignore : Pattern to identify pages to ignore
+All values are optional (name or modulename must be at least defined)
+
+* name       : Plugin name
+* modulename : Plugin version to install
+* pages      : Regex list for defining which pages need to be taken into account in the statistics
+* earning    : Pattern to identify earnings
+* ignore     : Pattern to identify pages to ignore
+* users      : Users allowed to the statistic area. Default => user:admin password:admin
+* credentials: Path to a .cjs file containing allowed user list .i.e "/path/to/credentials.cjs" (The above field has 
+  precedence over this one) 
+ 
+
+<br/>
+
+##### Content Example for "credentials.cjs" 
+```javascript
+module.exports = {
+  "admin": {
+    "password": "admin"
+  }
+};
+```
 
 <br/>
 
