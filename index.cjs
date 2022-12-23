@@ -142,7 +142,6 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         }
 
         const authDir = joinPath(__dirname, "auth/");
-        // const dynDir = joinPath(authDir, "wanalyst");
         const dynDir = authDir;
 
         if (!process.env.JWT_SECRET_TOKEN)
@@ -178,8 +177,6 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         };
 
         const serverUrl = convertToUrl(session);
-        // const statDir = session.serverName + "." + session.namespace;
-        // pluginOptions.url = serverUrl + statDir + "/index.html";
         pluginOptions.url = serverUrl + "login-web-analyst.server.cjs";
 
         loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
