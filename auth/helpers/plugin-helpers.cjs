@@ -3,7 +3,6 @@ const getPluginOptions = function ({session, pluginName, loggable})
     try
     {
         const plugins = session.plugins;
-        let pluginOptions;
         for (let i = 0; i < plugins.length; ++i)
         {
             const plugin = plugins[i];
