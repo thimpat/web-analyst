@@ -1,0 +1,26 @@
+<h3>Generate self-signed certificates automatically</h3>
+<p>For instance, you can generate self-signed certificates automatically to simulate HTTPS with localhost.</p>
+<h6>1. Edit configuration file</h6>
+<pre class="language-shell">
+    <code>$&gt; genserve edit server rserver</code>
+</pre>
+<br/>
+<br/>
+<h6>Set the property allowSelfSigned to "yes"</h6>
+<pre class="language-json">
+    <code>{
+  "rserver": {
+    "ssl": "yes",
+    "allowSelfSigned": "yes",
+      ...
+  }
+}</code>
+</pre>
+<br/>
+<br/>
+<h6>When you start "rserver", the system will
+    automatically generate the certificates and update the
+    configuration files.</h6>
+<br>
+<hr>
+<br>

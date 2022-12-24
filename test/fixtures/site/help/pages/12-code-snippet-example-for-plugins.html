@@ -1,0 +1,37 @@
+<h3>Code Snippet example for plugins</h3>
+<br/>
+<br/>
+<h6>/path/to/my-plugin.cjs</h6>
+<pre><code class="language-javascript">
+/**
+ * The server launches this plugin at the start.
+ * It receives one message, "request".
+ * Values change here will be taken into account by the server.
+ * The plugin dies along with the server.
+ */
+const argv = require("minimist")(process.argv);
+
+process.on("message",
+    ({action, req, res, data = {}} = {}) =>
+    {
+        if (action === "request")
+        {
+            console.log(`[${argv.server}] Child acknowledged request`);
+
+            data = data || {};
+            data.message = "cool";
+
+            const message =  {req, res, data};
+            process.send(message);
+        }
+    });
+
+(async function ()
+{
+    console.log(`[${argv.server}] child waited`);
+}());
+</code>
+</pre>
+<br>
+<hr>
+

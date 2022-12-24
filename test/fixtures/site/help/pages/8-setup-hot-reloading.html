@@ -1,0 +1,54 @@
+<h3>Setup Auto Reload</h3>
+<br/>
+<br/>
+
+<h6>1. Edit server properties you wish to set up</h6>
+<pre class="language-shell">
+<code>$&gt; genserve edit autoreloadserver</code>
+</pre>
+
+<br/>
+<br/>
+
+<h6>2. Update the dynamicDirs section and add an index.html file to /path/to/public</h6>
+<pre class="language-json"><code>{
+    ...
+    "monitorDirs": [
+        "/path/to/public", "/path/to/build"
+    ],
+    ...
+}</code>
+</pre>
+
+<br/>
+<br/>
+
+<h6>3. Start the server</h6>
+<pre class="language-shell">
+<code>$&gt; genserve start hotreloadserver --port 10020 --dir ./public</code>
+</pre>
+
+<br/>
+<br/>
+
+<h6>4. Open your browser to <a href="http://localhost:10020/index.html" rel="nofollow">http://localhost:10020/index.html</a></h6>
+<pre class="language-shell">
+<code>$&gt; genserve start autoreloadserver</code>
+</pre>
+
+<br/>
+<br/>
+
+<h6>5. Modify the index.html file</h6>
+<p>The browser should reload the page.</p>
+<br>
+<blockquote>
+    <p>
+        <g-emoji class="g-emoji" alias="no_entry_sign"
+                 fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f6ab.png">🚫
+        </g-emoji>
+        Note: Hot Reloading will work exclusively with HTML file
+    </p>
+</blockquote>
+<br>
+<hr>

@@ -1,0 +1,90 @@
+<h3>
+    <a aria-hidden="true" class="anchor" href="#"
+       id="user-content-setup-and-configure-a-server">
+        <span aria-hidden="true" class="octicon octicon-link"></span>
+    </a>Setup
+    and configure a server</h3>
+<h6>
+    <a aria-hidden="true" class="anchor" href="#"
+       id="user-content-1-set-server-properties"><span aria-hidden="true" class="octicon octicon-link"></span></a>
+    1. Set server properties
+</h6>
+<pre><code class="language-shell">$&gt; genserve set rserver --port 8080 --dir ./public</code></pre>
+In this example, "rserver" is the server name
+<br/>
+<br/>
+
+<h6>
+    <a aria-hidden="true" class="anchor"
+       href="#"
+       id="user-content-2-edit-server-file-properties-for-a-more-advanced-setup">
+    <span aria-hidden="true"
+          class="octicon octicon-link"></span></a>
+    2. Edit server file properties
+</h6>
+<pre><code class="language-shell">$&gt; genserve edit rserver</code></pre>
+
+</div>
+
+<h6><a aria-hidden="true"
+       class="anchor" href="#"
+       id="user-content-look-for-the-rserver-section-in-your-editor-and-modify-the-options-you-want-to-change"><span
+        aria-hidden="true" class="octicon octicon-link"></span></a>
+</h6>
+
+Update the file
+
+
+<pre><code class="language-json">
+{
+  "rserver": {
+    "serverName": "rserver",
+    "defaultPage": "index.html",
+    "protocol": "http://",
+    "host": "localhost",
+    "port": 8080,
+    "staticDirs": [
+      "C:/projects/genserve/public"
+    ],
+    "serverUrl": "http://localhost:5050/",
+    "active": false,
+    "timeout": 5000,
+    "perMessageDeflate": false,
+    "strictServerPort": "yes",
+    "dynamicDirs": [],
+    "dynamicExts": ".server.[cm]?js"
+  }
+}
+</code>
+</pre>
+<h6><a aria-hidden="true" class="anchor" href="#"
+       id="user-content-save-and-close-the-file"><span aria-hidden="true" class="octicon octicon-link"></span></a></h6>
+
+Save and close the file
+<br/>
+<br/>
+<h6><a aria-hidden="true" class="anchor" href="#" id="user-content-3-start-the-server"><span
+        aria-hidden="true" class="octicon octicon-link"></span></a>3. Start the server</h6>
+<pre><code class="language-shell">$&gt; genserve start rserver</code></pre>
+</div>
+<h6><a aria-hidden="true" class="anchor" href="#"
+       id="user-content-4-check-that-the-server-is-up-and-running"><span aria-hidden="true"
+                                                                         class="octicon octicon-link"></span></a>4.
+    Check
+    that
+    the server is up and running</h6>
+<pre><code class="language-shell">$&gt; genserve scan</code></pre>
+</div>
+<p>
+    <g-emoji alias="computer" class="g-emoji"
+             fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4bb.png">💻
+    </g-emoji>
+    ↴
+</p>
+<p><a href="https://github.com/thimpat/genserve/blob/main/scan-genserve.gif" rel="noopener noreferrer"
+      target="_blank"><img
+        alt="scan-genserve.gif" src="https://github.com/thimpat/genserve/raw/main/scan-genserve.gif"
+        style="max-width: 100%;"></a></p>
+<br>
+<hr>
+

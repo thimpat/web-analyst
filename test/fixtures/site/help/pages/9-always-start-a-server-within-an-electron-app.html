@@ -1,0 +1,66 @@
+<h3><a id="user-content-always-start-a-server-within-an-electron-app" class="anchor" aria-hidden="true"
+       href="#"><span aria-hidden="true"
+                                                                  class="octicon octicon-link"></span></a>Always
+    start a server within an Electron App</h3>
+<br>
+<p>You can ask Genserve always to start a server when your application starts, then stop it
+    when the application exits.</p>
+<h6>Edit your main.js code to look like the code below.</h6>
+
+<pre><code class="language-javascript">
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
+
+const {startGenServer, stopGenServer, infoGenServer} = require("genserve");
+
+/**
+ * Starts a Genserve instance named "myappserver",
+ * on port 12000 serving a web directory.
+ * http://localhost:12000/
+ */
+const startDefaultServer = async () =>
+{
+    await startGenServer({name: "myappserver", port: 12000, dirs: ["./web"]});
+    return await infoGenServer({name: "myappserver"});
+};
+
+/**
+ * Stops the Genserve instance "myappserver"
+ */
+const stopServer = async () =>
+{
+    await stopGenServer({name: "myappserver"});
+};
+
+const createWindow = async (info) => {
+
+    const mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+    });
+
+    // Load the page the "myappserver" server is pointing to
+    // http://localhost:12000/
+    await mainWindow.loadURL(info.serverUrl);
+};
+
+app.whenReady().then(async () => {
+
+    // Starts the server before the renderer creation
+    const info = await startDefaultServer();
+
+    await createWindow(info);
+
+    app.on("activate", () => {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+});
+
+app.on("window-all-closed", async () => {
+    // Stop the server when your app is closed
+    await stopServer();
+});
+</code></pre>
+
+<hr>
+<br>

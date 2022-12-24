@@ -1,0 +1,53 @@
+<h3>Run multiple domains on the same IP.</h3>
+<h6>1. Edit configuration file</h6>
+<pre class="language-shell">
+        <code>$&gt; genserve edit server rserver</code>
+</pre>
+<br/>
+<br/>
+<h6>Add a property named children that contain an array of server names</h6>
+
+<h5>Main Server</h5>
+<pre class="language-json"><code>{
+  "rserver": {
+    "serverName": "rserver",
+    "children": ["myserver1", "myserver2"],
+      ...
+  }
+}</code>
+</pre>
+
+<br/>
+<br/>
+
+<h5>Second server</h5>
+myserver1 will be serving a non-secure website
+<pre class="language-json"><code>{
+    ...
+    "serverName": "myserver1"
+    ...
+}</code>
+</pre>
+
+<br/>
+<br/>
+
+<h5>Third server</h5>
+myserver2 will be serving an https url
+<pre class="language-json"><code>{
+    ...
+    "serverName": "myserver2",
+    "ssl": "on",
+    "cert": "/path/to/cert",
+    "key": "/path/to/key"
+    ...
+}</code>
+</pre>
+
+<br/>
+<br/>
+
+<h6>When you start "rserver", "myserver1" and "myserver2" will also start.</h6>
+
+<br>
+<hr>

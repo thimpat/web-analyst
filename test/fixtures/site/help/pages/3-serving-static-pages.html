@@ -1,0 +1,21 @@
+<h2>Serving static pages</h2>
+
+<br/>
+<h6>1. Edit server properties you wish to set up</h6>
+<pre><code class="language-shell">$> genserve edit server <servername></servername></code></pre>
+
+<br/>
+
+<h6>2. Update the staticDirs key</h6>
+<pre><code class="language-json">
+    ...
+    "staticDirs": [
+    "C:/path/to/public",
+    "C:/path/to/public2",
+    ],
+    ...
+</code></pre>
+
+
+<h6>3. Start the server</h6>
+<pre><code class="language-shell">$> genserve start myserver</code></pre>

@@ -1,0 +1,136 @@
+<h3><a aria-hidden="true" class="anchor" href="setup-404-pages-and-other-unhandled-uris"
+       id="user-content-setup-404-pages-and-other-unhandled-uris"><span aria-hidden="true"
+                                                             class="octicon octicon-link"></span></a>Setup 404
+    pages and other unhandled uris</h3>
+
+<h6>1. Edit the configuration file</h6>
+<pre><code class="language-shell">$> genserve edit server rserver</code></pre>
+
+<br/>
+<br/>
+
+<h6>2. Add an "unprocessed" key that point to the URI to handle bad requests</h6>
+<pre><code class="language-json">{
+  "rserver": {
+    "serverName": "rserver",
+    "defaultPage": "index.html",
+    "protocol": "http://",
+    "host": "localhost",
+    "port": 8080,
+    "dynamicDirs": [
+      "/projects/dynamic"
+    ],
+    "staticDirs": [
+      "/projects/static"
+    ],
+    "unprocessed": "/errors.server.cjs"
+  }
+}</code></pre>
+
+<br/>
+<br/>
+
+<h6></a>3. Create the code for handling these requests in /projects/dynamic/errors.server.cjs</h6>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">const</span> <span
+        class="pl-s1">content</span> <span class="pl-c1">=</span> <span
+        class="pl-s">`&lt;!DOCTYPE html&gt;</span>
+<span class="pl-s">&lt;html lang="en"&gt;</span>
+<span class="pl-s">    &lt;head&gt;</span>
+<span class="pl-s">        &lt;meta charset="utf-8" /&gt;</span>
+<span class="pl-s">        &lt;meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" /&gt;</span>
+<span class="pl-s">        &lt;title&gt;Error&lt;/title&gt;</span>
+<span class="pl-s">        &lt;link href="css/styles.css" rel="stylesheet" /&gt;</span>
+<span class="pl-s">    &lt;/head&gt;</span>
+<span class="pl-s">    &lt;body&gt;</span>
+<span class="pl-s">        &lt;header class="masthead d-flex align-items-center"&gt;</span>
+<span class="pl-s">            &lt;div class="container px-4 px-lg-5 text-center"&gt;</span>
+<span class="pl-s">                &lt;h3 class="mb-1"&gt;Page not found&lt;/h3&gt;</span>
+<span class="pl-s">           &lt;/div&gt;</span>
+<span class="pl-s">        &lt;/header&gt;</span>
+<span class="pl-s">     &lt;/body&gt;</span>
+<span class="pl-s">&lt;/html&gt;`</span><span class="pl-kos">;</span>
+
+<span class="pl-c">/**</span>
+<span class="pl-c"> * Error handler example code</span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">http.ClientRequest</span>} req in-progress Node http request instance</span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">http.ServerResponse</span>} res Usual Node response instance</span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">{code: number, message: string</span>}|null} error Error object </span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">*</span>} parsedUrl Various information on the URI that triggered the error </span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">string</span>} namespace Namespace the server belongs to</span>
+<span class="pl-c"> * <span class="pl-k">@param</span> {<span class="pl-smi">*</span>} session Contains the server configuration</span>
+<span class="pl-c"> * <span class="pl-k">@returns</span> {<span class="pl-smi">Promise&lt;null&gt;</span>}</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">const</span> <span class="pl-en">onRequest</span> <span class="pl-c1">=</span> <span class="pl-k">async</span> <span
+            class="pl-kos">(</span><span class="pl-s1">req</span><span class="pl-kos">,</span> <span
+            class="pl-s1">res</span><span
+            class="pl-kos">,</span> <span class="pl-kos">{</span>error<span
+            class="pl-kos">,</span> parsedUrl<span
+            class="pl-kos">,</span> namespace<span class="pl-kos">,</span> session<span
+            class="pl-kos">}</span><span
+            class="pl-kos">)</span> <span class="pl-c1">=&gt;</span>
+<span class="pl-kos">{</span>
+    <span class="pl-k">try</span>
+    <span class="pl-kos">{</span>
+        <span class="pl-k">if</span> <span class="pl-kos">(</span><span class="pl-s1">req</span><span
+            class="pl-kos">.</span><span class="pl-c1">method</span> <span class="pl-c1">!==</span> <span
+            class="pl-s">"GET"</span><span class="pl-kos">)</span>
+        <span class="pl-kos">{</span>
+            <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">writeHead</span><span
+            class="pl-kos">(</span><span class="pl-c1">500</span><span class="pl-kos">,</span> <span
+            class="pl-kos">{</span><span
+            class="pl-s">"Content-Type"</span>: <span class="pl-s">"text/html"</span><span
+            class="pl-kos">}</span><span class="pl-kos">)</span><span class="pl-kos">;</span>
+            <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">end</span><span
+            class="pl-kos">(</span><span class="pl-s">`Forbidden: <span class="pl-s1"><span
+            class="pl-kos">${</span><span
+            class="pl-s1">parsedUrl</span><span class="pl-kos">.</span><span class="pl-c1">path</span><span
+            class="pl-kos">}</span></span>`</span><span class="pl-kos">)</span><span class="pl-kos">;</span>
+            <span class="pl-k">return</span> <span class="pl-c1">null</span><span class="pl-kos">;</span>
+        <span class="pl-kos">}</span>
+
+        <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">writeHeader</span><span
+            class="pl-kos">(</span><span class="pl-s1">error</span><span class="pl-kos">.</span><span
+            class="pl-c1">code</span><span
+            class="pl-kos">,</span> <span class="pl-kos">{</span><span class="pl-s">"Content-Type"</span>: <span
+            class="pl-s">"text/html"</span><span class="pl-kos">}</span><span class="pl-kos">)</span><span
+            class="pl-kos">;</span>
+        <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">end</span><span
+            class="pl-kos">(</span><span class="pl-s1">content</span><span class="pl-kos">)</span><span
+            class="pl-kos">;</span>
+        <span class="pl-k">return</span> <span class="pl-c1">null</span><span class="pl-kos">;</span>
+    <span class="pl-kos">}</span>
+    <span class="pl-k">catch</span> <span class="pl-kos">(</span><span class="pl-s1">e</span><span
+            class="pl-kos">)</span>
+    <span class="pl-kos">{</span>
+        <span class="pl-smi">console</span><span class="pl-kos">.</span><span class="pl-en">error</span><span
+            class="pl-kos">(</span><span class="pl-kos">{</span><span class="pl-c1">lid</span>: <span
+            class="pl-c1">2901</span><span
+            class="pl-kos">}</span><span class="pl-kos">,</span> <span class="pl-s1">e</span><span
+            class="pl-kos">.</span><span class="pl-c1">message</span><span class="pl-kos">)</span><span
+            class="pl-kos">;</span>
+    <span class="pl-kos">}</span>
+
+    <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">writeHead</span><span class="pl-kos">(</span><span
+            class="pl-c1">500</span><span class="pl-kos">,</span> <span class="pl-kos">{</span><span
+            class="pl-s">"Content-Type"</span>: <span
+            class="pl-s">"text/html"</span><span class="pl-kos">}</span><span class="pl-kos">)</span><span
+            class="pl-kos">;</span>
+    <span class="pl-s1">res</span><span class="pl-kos">.</span><span class="pl-en">end</span><span
+            class="pl-kos">(</span><span class="pl-s">"Wrong request"</span><span class="pl-kos">)</span><span
+            class="pl-kos">;</span>
+<span class="pl-kos">}</span><span class="pl-kos">;</span>
+
+<span class="pl-smi">module</span><span class="pl-kos">.</span><span class="pl-c1">exports</span><span
+            class="pl-kos">.</span><span class="pl-c1">onRequest</span> <span class="pl-c1">=</span> <span
+            class="pl-en">onRequest</span><span class="pl-kos">;</span></pre>
+</div>
+
+<br/>
+<br/>
+
+<h6>Restart the server</h6>
+<pre><code class="language-shell">$> genserve restart rserver</code></pre>
+
+<br>
+<hr>

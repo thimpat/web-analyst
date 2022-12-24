@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="Genserve is a server generator to spawn and manage non-blocking servers." />
+        <meta name="author" content="" />
+        <title>Genserve Help</title>
+        <link rel="icon" href="favicon.png" />
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="css/styles.css" rel="stylesheet" />
+
+        <link rel="stylesheet" href="css/prism.css">
+    </head>
+    <body id="page-top">
+        <header class="masthead d-flex align-items-center">
+            <div class="container px-4 px-lg-5 text-center">
+                <h1 id="welcome-title" class="mb-1">Welcome to Genserve</h1>
+                <h3 id="welcome-description" class="mb-5"><em>A server generator for rapid server set-up</em></h3>
+                <a id="more-info-button" class="btn btn-primary btn-xl"
+                   href="https://www.npmjs.com/package/genserve">More info</a>
+                <a id="how-to-button" class="btn btn-primary btn-xl" href="help.html">How to</a>
+            </div>
+        </header>
+        <section class="content-section bg-light">
+            <div class="container px-4 px-lg-5 text-center">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-lg-10">
+
+                        <blockquote>
+                            <h6 id="genserveisaservergeneratorthatallowsspawningandmanagingnonblockingservers">Genserve is a server generator that allows spawning and managing non-blocking servers.</h6>
+                        </blockquote>
+                        <p><br/></p>
+                        <hr />
+                        <h2 id="installation">Installation</h2>
+                        <pre><code class="shell language-shell">npm install genserve -g
+</code></pre>
+                        <p><br/></p>
+                        <hr />
+                        <h2 id="usage">Usage</h2>
+                        
+                        <pre><code class="shell language-shell">$&gt; genserve [command] [target] [--port number] [--dir path]
+</code></pre>
+                        <p><br/></p>
+                        <hr />
+                        <h3 id="start">start</h3>
+                        <p>Start a server named [servername] on any available port serving the directory genserve is running from.</p>
+                        <p>When [servername] is missing, it uses "default" as a name.</p>
+                        <pre><code class="shell language-shell"># [servername] must be replaced by any name you wish to set
+$&gt; genserve start [servername]
+</code></pre>
+                        <hr />
+                        <h3 id="restart">restart</h3>
+                        <p>Restart a server</p>
+                        <pre><code class="shell language-shell">$&gt; genserve restart [servername]</code></pre>
+                        <hr />
+                        <h3 id="clone">clone</h3>
+                        <p>Clone a server</p>
+                        <pre><code class="shell language-shell">$&gt; genserve clone servername [servertarget]
+</code></pre>
+                        <h6 id="example-1">Example</h6>
+                        <pre><code class="shell language-shell">$&gt; genserver clone genesis1 genesis2
+</code></pre>
+                        <hr />
+                        <h3 id="renameaserver">rename</h3>
+                        <p>Rename a server</p>
+                        <pre><code class="shell language-shell">$&gt; genserve rename servername [servertarget]
+</code></pre>
+                        <hr />
+                        <h3 id="stop">stop</h3>
+                        <p>Stop a server</p>
+                        <pre><code class="shell language-shell">$&gt; genserve stop [servername]
+</code></pre>
+                        <hr />
+                        <h3 id="removedelete">remove</h3>
+                        <p>Remove a server from the registered server list.</p>
+                        <pre><code class="shell language-shell">$&gt; genserve remove [servername]
+</code></pre>
+                        <hr />
+                        <h3 id="log">log</h3>
+                        <p>Open log for a server</p>
+                        <pre><code class="shell language-shell">$&gt; genserve log [servername]
+</code></pre>
+                        <hr />
+                        <h3 id="list">list</h3>
+                        <p>Show list of created named servers.</p>
+                        <pre><code class="shell language-shell">$&gt; genserve list
+</code></pre>
+                        <hr />
+                        <h3 id="save">save</h3>
+                        <p>Save named servers' current list.</p>
+                        <pre><code class="shell language-shell"># Save server list into a ./testfile.json file
+$&gt; genserve save testfile
+</code></pre>
+                        <hr />
+                        <h3 id="load">load</h3>
+                        <p>Load named servers from files</p>
+                        <pre><code class="shell language-shell"># Load server list from ./testfile.json file
+$&gt; genserve load testfile
+</code></pre>
+                        <hr />
+                        <h3 id="scan">scan</h3>
+                        <p>Show a list of servers and show which ones are running.</p>
+                        <pre><code class="shell language-shell">$&gt; genserve scan
+</code></pre>
+                        <hr />
+                        <h3 id="flush">flush</h3>
+                        <p>Remove all registered servers (must be stopped and unprotected).</p>
+                        <pre><code class="shell language-shell">$&gt; genserve flush
+</code></pre>
+                        <hr />
+                        <h3 id="edit">edit</h3>
+                        <p>Edit session file in an editor</p>
+                        <pre><code class="shell language-shell">$&gt; genserve edit servers          # Edit settings for registered servers
+
+$&gt; genserve edit settings         # Edit global settings
+</code></pre>
+                        <hr />
+                        <h3 id="set">set</h3>
+                        <p>Modify server property without starting it.</p>
+                        <blockquote>
+                            <p>🚫 Note: Users must stop the server before being able to change properties.</p>
+                        </blockquote>
+                        <pre><code class="shell language-shell">$&gt; genserve set tom --port 6000 --dir public
+</code></pre>
+                        <hr />
+
+
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script src="vendor/prism.js"></script>
+        <script src="js/help.js"></script>
+
+    </body>
+</html>

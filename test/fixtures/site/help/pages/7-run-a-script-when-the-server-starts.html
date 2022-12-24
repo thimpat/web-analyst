@@ -1,0 +1,70 @@
+<h3>Run a script when the server starts</h3>
+
+<br/>
+<br/>
+
+<blockquote>
+    <h6>When the server launches a script via openApp,</h6>
+    <h6>It receives only two messages, "started" and "ended".</h6>
+    <p>The user must exit the script at some point.</p>
+</blockquote>
+<br/>
+<br/>
+<h6>1. Stop the server</h6>
+<pre class="language-shell">
+<code>$&gt; genserve stop myserver</code>
+</pre>
+<br>
+<h6><a id="user-content-2-edit-server-properties-you-wish-to-set-up" class="anchor" aria-hidden="true"
+       href="#"><span aria-hidden="true"
+                                                                 class="octicon octicon-link"></span></a>2. Edit
+    server properties you wish to set up</h6>
+<pre class="language-shell">
+<code>$&gt; genserve edit myserver</code>
+</pre>
+<br>
+<h6><a id="user-content-3-update-the-openapp-key" class="anchor" aria-hidden="true"
+       href="#"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.
+    Update
+    the openApp key</h6>
+<pre class="language-json"><code>{
+    ...
+    "openApp": "C:/path/to/start-app.cjs"
+    ...
+}</code>
+</pre>
+<br>
+<h6><a id="user-content-4-start-the-server-1" class="anchor" aria-hidden="true"
+       href="#"><span
+        aria-hidden="true" class="octicon octicon-link"></span></a>4. Start the server</h6>
+<pre class="language-shell">
+<code>$&gt; genserve start myserver</code>
+</pre>
+
+
+<br/>
+<br/>
+
+<h6>Code example for start-app.cjs</h6>
+<pre><code class="language-js">/**
+ * The server launches this script at start.
+ * It receives only two messages, started and ended.
+ * The user must exit the script when done.
+ */
+const argv = require("minimist")(process.argv);
+
+process.on("message",
+    ({action} = {}) =>
+    {
+        if (action === "started")
+        {
+            console.log(`[${argv.server}] child started`);
+        }
+        else if (action === "ended")
+        {
+            console.log(`[${argv.server}] Child Exited`);
+            process.exit(0);
+        }
+    });
+
+console.log(`[${argv.server}] child stated`);</code></pre>

@@ -1,0 +1,62 @@
+<h3><a id="user-content-url-rewrite" class="anchor" aria-hidden="true" href="#"><span
+        aria-hidden="true"
+        class="octicon octicon-link"></span></a>URL Rewrite
+</h3>
+
+<br>
+
+<h6>1. To URL rewrite, edit the configuration file and locate the server section to modify</h6>
+
+<pre><code class="language-shell">
+    $&gt; genserve edit myserver
+</code></pre>
+<br>
+
+<h6>2. Add a "rewrite" key which should be a mapping of uris</h6>
+<pre><code class="language-json">{
+    ...
+    rewriter: "/path/to/your-rewriter.cjs"
+    ...
+}
+</code></pre>
+
+The script content should look like this.
+
+<pre><code class="language-javascript">
+/**
+ * Dynamically rewrite a URL (Call on every request)
+ * @param pathname
+ * @param session
+ * @param namespace
+ * @returns {string}
+ */
+module.exports.liveRewrite = (pathname, {session, namespace} = {}) =>
+{
+    try
+    {
+        if (pathname === "/tttt0")
+        {
+            return "/index.html";
+        }
+    }
+    catch (e)
+    {
+        console.error({lid: 2903}, e.message);
+    }
+
+    return pathname;
+};
+
+/**
+ * Return a mapping of URLs to rewrite (Call once)
+ * @param session
+ * @param namespace
+ * @returns {{ttt: string}}
+ */
+module.exports.generateRewriteMap = ({session, namespace} = {}) =>
+{
+    return {
+        "ttt": "index.html"
+    };
+};
+</code></pre>

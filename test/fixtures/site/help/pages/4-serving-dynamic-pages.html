@@ -1,0 +1,84 @@
+<h3><a id="user-content-serving-dynamic-pages" class="anchor" aria-hidden="true"
+       href="4-serving-dynamic-pages.html"><span
+        aria-hidden="true" class="octicon octicon-link"></span></a>Serving dynamic pages</h3>
+<br/>
+<br/>
+
+<h6>1. Edit server properties</h6>
+
+<pre class="language-shell"><code>$&gt; genserve edit server &lt;servername<span class="pl-k">&gt;</span></code></pre>
+<br>
+<h6>2. Update the dynamicDirs section</h6>
+<pre><code class="language-json">{
+    ...
+    "dynamicDirs": [
+        "C:/path/to/dyn"
+    ],
+    ...
+}</code>
+</pre>
+<br>
+<h6>3. Add a file with the extension <strong>.server.cjs</strong> to C:/path/to/dyn directory</h6>
+<h5><a id="user-content--exampleservercjs-" class="anchor" aria-hidden="true" href="#"><span
+        aria-hidden="true" class="octicon octicon-link"></span></a>
+    <g-emoji class="g-emoji" alias="memo"
+             fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4dd.png">📝
+    </g-emoji>
+    example.server.cjs ↴
+</h5>
+<pre class="language-javascript"><code>
+    const onRequest = (req, res, {session}) => { res.end("Awesome"); };
+    module.exports.onRequest = onRequest;
+</code></pre>
+<br>
+<br>
+
+<h6>4. Start the server</h6>
+<pre class="language-shell">
+    <code>$&gt; genserve start myserver --port 10060 --dir</code>
+</pre>
+
+<br>
+<br>
+
+<h6>5. Open your browser to <a href="http://localhost:10060/index.server.cjs" rel="nofollow">http://localhost:10060/index.server.cjs</a></h6>
+<pre class="language-shell">
+    <code>$&gt; genserve start myserver</code>
+</pre>
+
+<br>
+<br>
+
+<blockquote>
+    <p>
+        <g-emoji class="g-emoji" alias="no_entry_sign"
+                 fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f6ab.png">🚫
+        </g-emoji>
+        Note: Script must have the extension <strong>.server.js</strong>, <strong>.server.cjs</strong> or
+        <strong>.server.mjs</strong>
+        and must export a
+        method/function named onRequest
+    </p>
+</blockquote>
+<br>
+
+
+<h3>Example</h3>
+<blockquote>
+    <p>The code below uses .cjs, but ESM can also be used.</p>
+    <p>In this case change the file extension to .server.mjs</p>
+</blockquote>
+<br>
+<h6>index.server.cjs</h6>
+<pre class="language-javascript"><code>// Intercept all requests made to the server
+const onRequest = (req, res, {session}) =>
+{
+    // Send the preformatedResponse to the client
+    res.end("Awesome");
+};
+
+// Export the onRequest function.
+module.exports.onRequest = onRequest;</code>
+</pre>
+<br>
+<hr>

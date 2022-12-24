@@ -1,0 +1,29 @@
+<h3>Enable plugins</h3>
+<br>
+<h6>1. Stop the server</h6>
+<pre class="language-shell">
+    <code>$&gt; genserve stop myserver</code>
+</pre>
+<br/>
+<br/>
+
+<h6>2. Edit server properties</h6>
+<pre class="language-shell">
+<code>$&gt; genserve edit myserver</code>
+</pre>
+<br/>
+<br/>
+<h6>3. Update the plugins key</h6>
+<pre class="language-json"><code>{
+    ...
+    "plugins": ["C:/path/to/my-plugin.cjs"]
+    ...
+}</code>
+</pre>
+<br/>
+<br/>
+<h6>4. Start the server</h6>
+<pre class="language-shell">
+    <code>$&gt;</span> genserve start myserver</code>
+</pre>
+<br>
