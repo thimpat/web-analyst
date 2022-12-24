@@ -56,8 +56,16 @@
     "./public/css/style.css"
   ],
   "devDependencies": {
+    "chai": "^4.3.7",
+    "chai-fs": "^2.0.0",
+    "chromedriver": "^108.0.0",
+    "chromium": "^3.0.3",
     "eslint": "^8.25.0",
+    "genserve": "file:../genserve",
     "glob": "^8.0.3",
+    "mocha": "^10.2.0",
+    "selenium-webdriver": "^4.7.1",
+    "shelljs": "^0.8.5",
     "to-esm": "^2.24.1"
   }
 }
