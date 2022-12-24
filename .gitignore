@@ -74,3 +74,7 @@ dist
 *.tgz
 /web/
 /tools/npm-version.cjs
+/test/deployment/
+/test/tmp-325598.pack.zip
+/test/running/
+

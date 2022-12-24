@@ -65,8 +65,6 @@ describe("After a local deployment", function ()
     {
         shell.cd(joinPath(__dirname, ".."));
 
-        driver = await init();
-
         if (existsSync("test/tmp-325598.pack.zip"))
         {
             unlinkSync("test/tmp-325598.pack.zip");
@@ -81,17 +79,10 @@ describe("After a local deployment", function ()
 
         rmSync("running/", {recursive: true, force: true});
         expect("./running/").not.to.be.a.path();
-
-        await sleep(5000);
     });
 
     after(async function ()
     {
-        await driver.close();
-        await driver.quit();
-
-        // The driver takes time to quit
-        await sleep(10000);
 
         shell.cd(__dirname);
         shell.exec(`node .${clientPath} shutdown now`, {silent: true});
@@ -170,6 +161,37 @@ describe("After a local deployment", function ()
 
         describe("various http requests", function ()
         {
+            before(async function ()
+            {
+                driver = await init();
+                await sleep(5000);
+            });
+
+            after( async function ()
+            {
+                await driver.close();
+                await driver.quit();
+
+                // The driver takes time to quit
+                await sleep(10000);
+            });
+
+            describe("On the site page", function ()
+            {
+                it("should successfully load default index.html 3 times", async function ()
+                {
+                    await driver.get(`http://localhost:38432/index.html`);
+                    await sleep(1000);
+                    await driver.get(`http://localhost:38432/index.html`);
+                    await sleep(1000);
+                    await driver.get(`http://localhost:38432/index.html`);
+                    await sleep(1000);
+                    const url = await driver.getCurrentUrl();
+                    expect(url).to.equal(`http://localhost:38432/index.html`);
+                });
+
+            });
+
             describe("On the statistic page", function ()
             {
                 it("should successfully load default index.html", async function ()
