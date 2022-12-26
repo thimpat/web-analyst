@@ -121,3 +121,4 @@ crashlytics-build.properties
 *tgz
 /templates/
 /tools/npm-version.cjs
+/test/
