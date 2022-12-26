@@ -69,9 +69,9 @@ $> npm install web-analyst
 }
 ```
 
-All values are optional (name or modulename must be at least defined)
+All values are optional apart from the name
 
-* name       : Plugin name
+* name       : Plugin name (required)
 * modulename : Plugin version to install
 * pages      : Regex list for defining which pages need to be taken into account in the statistics
 * earning    : Pattern to identify earnings
