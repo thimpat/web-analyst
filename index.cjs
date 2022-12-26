@@ -170,9 +170,12 @@ const onInit = async function ({options: pluginOptions, session, loggable})
 
         // Errors
         pluginOptions.errors = pluginOptions.errors || {};
-        pluginOptions.errors["401"] = pluginOptions.errors["401"] || {};
-        pluginOptions.errors["401"] = {
+        pluginOptions.errors["401"] = pluginOptions.errors["401"] || {
             "message" : "Not logged in",
+            "pathname": "/login-web-analyst.server.cjs"
+        };
+        pluginOptions.errors["404"] = pluginOptions.errors["404"] || {
+            "message" : "Not found",
             "pathname": "/login-web-analyst.server.cjs"
         };
 
