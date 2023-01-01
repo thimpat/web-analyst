@@ -187,7 +187,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
 };
 
 /**
- * This method is called when genserve forks this plugin
+ * This method is called when Genserve forks this plugin {@link startPlugin}
  * or when genserve invokes importScriptByType
  * @returns {boolean}
  */
