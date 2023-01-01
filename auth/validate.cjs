@@ -31,7 +31,7 @@ const onValidate = async (req, res, {session = null, loggable = null} = {}) =>
     }
     catch (e)
     {
-        loggable.error({lid: 1000}, e.message);
+        loggable.error({lid: "WA2309"}, e.message);
     }
 
     return {allowed: false};
