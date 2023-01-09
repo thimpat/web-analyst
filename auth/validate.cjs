@@ -3,6 +3,9 @@ const {getOptions, setOptions} = require("../lib/utils/options.cjs");
 const {PLUGIN_NAME} = require("../constants.cjs");
 
 /**
+ * Runs incoming request against the matching validator and returns information
+ * related to its availability, rights, etc.
+ * {@link onRequestServer} -> {@link getItem} -> {@link searchItem} -> {@link onValidate}
  * @param req
  * @param res
  * @param session
