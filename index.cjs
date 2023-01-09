@@ -61,6 +61,7 @@ function trackData(req, res, {headers = {}, ip} = {})
 
 /**
  * GenServe message handler
+ * Entrypoint for requests
  * @param pagePattern
  * @param action
  * @param req

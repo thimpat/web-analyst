@@ -39,10 +39,11 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@thimpat/libutils": "^1.13.0",
+    "@thimpat/libutils": "^1.15.8",
     "accept-language-parser": "^1.5.0",
+    "analogger": "^1.22.1",
     "chart.js": "^1.1.1",
-    "clonefile": "^3.2.2",
+    "clonefile": "^3.7.2",
     "jsonwebtoken": "^8.5.1",
     "minimist": "^1.2.7",
     "tabulator-tables": "^5.4.1",
