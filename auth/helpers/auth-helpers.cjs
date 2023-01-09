@@ -69,7 +69,7 @@ const logoutSession = function (req, res, {loggable = null, errorMessage = ""} =
 };
 
 /**
- * Retuns info about session user (not session server i.e. Session)
+ * Retuns info about the user session (not session server i.e. Session)
  * @param req
  * @param session
  * @param loggable

@@ -176,7 +176,7 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
     }
     catch (e)
     {
-        loggable.error({lid: 1000}, e.message);
+        loggable.error({lid: "WA2303"}, e.message);
     }
 
     return res.end(JSON.stringify({success: false, message: `Processing error`}));

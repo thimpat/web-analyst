@@ -20,7 +20,7 @@ const getRequestDataFromPost = async (req) =>
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        console.error({lid: "WA2311"}, e.message);
     }
 };
 
@@ -33,7 +33,7 @@ const getRequestDataFromGet = (req) =>
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        console.error({lid: "WA2313"}, e.message);
     }
 
     return null;
@@ -78,7 +78,7 @@ const parseData = async (req) =>
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        console.error({lid: "WA2315"}, e.message);
     }
 };
 
