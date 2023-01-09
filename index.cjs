@@ -10,118 +10,42 @@ const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
+const {getLoggable, setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
+const {DETECTION_METHOD} = require("./constants.cjs");
 
+// ----------------------------------------------------------------
+// Run from Genserve thread
+// ----------------------------------------------------------------
 /**
- * Harvest data
- * @returns {Function}
- */
-function trackData(req, res, {headers = {}, ip} = {})
-{
-    try
-    {
-        const infoReq = url.parse(req.url, true);
-
-        for (let k in headers)
-        {
-            headers[k] = headers[k] || "";
-        }
-
-        for (let k in infoReq)
-        {
-            infoReq[k] = infoReq[k] || "";
-        }
-
-         if (isIgnorePattern(infoReq.pathname))
-        {
-            return;
-        }
-
-         if (!isPagePattern(infoReq.pathname))
-        {
-            return;
-        }
-
-        registerHit({
-            ip            : ip,
-            acceptLanguage: headers["accept-language"],
-            userAgent     : headers["user-agent"],
-            pathname      : infoReq.pathname,
-            search        : infoReq.search,
-        });
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 5441}, e.message);
-    }
-
-    return false;
-}
-
-/**
- * GenServe message handler
- * Entrypoint for requests
- * @param pagePattern
- * @param action
+ * Returns whether the client has already contacted the server,
+ * otherwise add a cookie to the client to be detected next time
  * @param req
  * @param res
- * @param headers
- * @param connection
- * @param socket
- * @param data
- * @param extraData
- * @param ip
- * @returns {boolean}
+ * @param loggable
+ * @returns {{seen: boolean}}
  */
-function onGenserveMessage({action, req, res, headers, connection, socket, data, extraData, ip})
+const processSeenStatus = function (req, res, {loggable = null} = {})
 {
     try
     {
-        if (action === "request")
+        const cookieString = req.headers.cookie;
+        if (!cookieString)
         {
-            data = data || {};
+            const expiration = Date.now() + (60 * 60) * 1000 * 24;
+            res.setHeader("Set-Cookie", [`web-analyst-token=485; HttpOnly`, `expires=${new Date(expiration)}`]);
 
-            trackData(req, res, {headers, connection, socket, ip, data, extraData});
+            return {seen: false};
         }
+
+        return {seen: true};
     }
     catch (e)
     {
-        console.error({lid: 2125}, e.message);
+        loggable.error({lid: "WA5427"}, e.message);
     }
 
-}
-
-/**
- * Set up the engine
- */
-function setupEngine({session, options})
-{
-    try
-    {
-        setSession(session);
-
-        const server = getSessionProperty("serverName");
-        const namespace = getSessionProperty("namespace");
-
-        // By default, we ignore the stats page
-        const statDir = "/" + server + "." + namespace + "/";
-        setOptions(options, {ignore: statDir});
-
-        startLogEngine(server, namespace);
-
-        // Set a listener on Genserve events
-        process.on("message", onGenserveMessage);
-
-        return true;
-    }
-    catch (e)
-    {
-        console.error({lid: 2189}, e.message);
-    }
-
-    return false;
-}
+    return {seen: false};
+};
 
 /**
  * Run in the same thread as the server.
@@ -188,6 +112,165 @@ const onInit = async function ({options: pluginOptions, session, loggable})
 };
 
 /**
+ * Each time a request is done, this function is called.
+ * This function is run from inside GenServe thread and is called before Genserve reaches out
+ * the plugin within its own thread.
+ * The value returned by this function will be sent to the plugin process via onGenserveMessage
+ * @see onGenserveMessage
+ * @param req
+ * @param res
+ * @param {*} pluginProps
+ * @param loggable
+ * @returns {{[seen]: boolean}}
+ */
+const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {})
+{
+    try
+    {
+        const {options} = pluginProps || {};
+        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE)
+        {
+            return {};
+        }
+
+        return processSeenStatus(req, res, {loggable});
+    }
+    catch (e)
+    {
+        loggable.error({lid: "WA6553"}, e.message);
+    }
+
+    return {};
+};
+
+// ----------------------------------------------------------------
+// Run in forked process
+// ----------------------------------------------------------------
+/**
+ * Harvest data
+ * @returns {Function}
+ */
+function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = null} = {})
+{
+    try
+    {
+        const infoReq = url.parse(req.url, true);
+
+        for (let k in headers)
+        {
+            headers[k] = headers[k] || "";
+        }
+
+        for (let k in infoReq)
+        {
+            infoReq[k] = infoReq[k] || "";
+        }
+
+        if (isIgnorePattern(infoReq.pathname))
+        {
+            return;
+        }
+
+        if (!isPagePattern(infoReq.pathname))
+        {
+            return;
+        }
+
+        registerHit({
+            ip: ip,
+            acceptLanguage: headers["accept-language"],
+            userAgent: headers["user-agent"],
+            pathname: infoReq.pathname,
+            search: infoReq.search,
+            seen
+        });
+
+        return true;
+    }
+    catch (e)
+    {
+        loggable.error({lid: 5441}, e.message);
+    }
+
+    return false;
+}
+
+/**
+ * GenServe message handler
+ * Entrypoint for requests
+ * @param pagePattern
+ * @param action
+ * @param req
+ * @param res
+ * @param headers
+ * @param connection
+ * @param socket
+ * @param data
+ * @param extraData
+ * @param ip
+ * @returns {boolean}
+ */
+function onGenserveMessage({loggable}, {
+    action,
+    headers,
+    req,
+    res,
+    data,
+    extraData,
+    ip,
+    informingPluginsResult = {}
+} = {})
+{
+    try
+    {
+        if (action === "request")
+        {
+            data = data || {};
+
+            const {seen} = informingPluginsResult;
+
+            trackData(req, res, {headers, ip, data, extraData, seen}, {loggable});
+        }
+    }
+    catch (e)
+    {
+        loggable.error({lid: 2125}, e.message);
+    }
+
+}
+
+/**
+ * Set up the engine
+ */
+const setupEngine = function ({session, options}, {loggable = null} = {})
+{
+    try
+    {
+        setSession(session);
+
+        const server = getSessionProperty("serverName");
+        const namespace = getSessionProperty("namespace");
+
+        // By default, we ignore the stats page
+        const statDir = "/" + server + "." + namespace + "/";
+        setOptions(options, {ignore: statDir});
+
+        startLogEngine(server, namespace);
+
+        // Set a listener on Genserve events
+        process.on("message", onGenserveMessage.bind(null, {loggable}));
+
+        return true;
+    }
+    catch (e)
+    {
+        loggable.error({lid: 2189}, e.message);
+    }
+
+    return false;
+};
+
+/**
  * This method is called when Genserve forks this plugin {@link startPlugin}
  * or when genserve invokes importScriptByType
  * @returns {boolean}
@@ -198,13 +281,26 @@ function init()
     {
         const argv = minimist(process.argv.slice(2));
 
-        // Ignore operations from genserve#importScriptByType
+        // Ignore all calls from genserve#importScriptByType
         if (!argv.session)
         {
             return true;
         }
 
-        setupEngine(argv);
+        if (!argv.genserveDir)
+        {
+            console.error({lid: 2183}, `WebAnalyst does not support this Genserve version`);
+            return false;
+        }
+
+        setGenserveDir(argv.genserveDir);
+
+        const loggable = getLoggable();
+
+        // Only the forked process processes this line
+        setupEngine(argv, {loggable});
+
+        process.send && process.send(`INITIALISED`);
 
         return true;
     }
@@ -229,4 +325,6 @@ function init()
 
 }());
 
+module.exports.onInformingPlugins = onInformingPlugins;
 module.exports.onInit = onInit;
+module.exports.init = init;
