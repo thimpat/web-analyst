@@ -13,6 +13,11 @@ const DETECTION_METHOD = {
     IP    : "ip"
 };
 
+const PAGES = {
+    LOGIN_PAGE_NAME: "login-web-analyst.server.cjs"
+};
+
 module.exports.PLUGIN_NAME = PLUGIN_NAME;
 module.exports.CONTEXT_TYPE = CONTEXT_TYPE;
 module.exports.DETECTION_METHOD = DETECTION_METHOD;
+module.exports.PAGES = PAGES;

@@ -11,7 +11,7 @@ const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
 const {getLoggable, setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
-const {DETECTION_METHOD} = require("./constants.cjs");
+const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
 
 // ----------------------------------------------------------------
@@ -98,7 +98,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         pluginOptions.errors = pluginOptions.errors || {};
 
         const serverUrl = convertToUrl(session);
-        pluginOptions.url = serverUrl + "login-web-analyst.server.cjs";
+        pluginOptions.url = serverUrl + PAGES.LOGIN_PAGE_NAME;
 
         loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
