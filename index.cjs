@@ -109,7 +109,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
     }
     catch (e)
     {
-        loggable.error({lid: 7547}, e.message);
+        loggable.error({lid: "GS7547"}, e.message);
     }
 
     return false;
