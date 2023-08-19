@@ -49,9 +49,12 @@ const processSeenStatus = function (req, res, {loggable = null} = {})
 };
 
 /**
- * Run in the same thread as the server.
- * The server will wait for onInit to complete
- * @note Called before launching the plugin engine in a separate thread (process)
+ * Add extra information to the plugin options.
+ * Populate staticDirs, dynDirs and validators for GenServe to be able to find the stats web folder.
+ * These directories will be extracted and used later by GenServe (@see updateSessionForPlugin)
+ * @note Run in the same thread as the server.
+ * @note The server will wait for onInit to complete
+ * @note Called before onGenserveMessage() receives its first message
  * @param pluginOptions
  * @param session
  * @param loggable
@@ -198,12 +201,16 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
 
 
 /**
- * Set up the engine
+ * - Generate HTML web pages for statistic pages
+ * - Build data directory if non-existent
+ * - Save session data (in the plugin memory space process)
+ * - Review and update stats plugin options
  */
 const setupEngine = function ({session, options}, {loggable = null} = {})
 {
     try
     {
+        // Save session information in plugin progress
         setSession(session);
 
         const server = getSessionProperty("serverName");
