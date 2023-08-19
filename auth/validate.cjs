@@ -25,7 +25,7 @@ const onValidate = async (req, res, {session = null, loggable = null} = {}) =>
         if (!pluginOptions || !Object.keys(pluginOptions).length)
         {
             const plugins = session.plugins || [];
-            const indexPlugin = plugins.findIndex(x => x.name === PLUGIN_NAME);;
+            const indexPlugin = plugins.findIndex(x => x.name === PLUGIN_NAME);
             pluginOptions = plugins[indexPlugin];
             setOptions(pluginOptions);
         }

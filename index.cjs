@@ -4,7 +4,7 @@
 const url = require("url");
 const {startLogEngine, registerHit} = require("./lib/hits-manager.cjs");
 const minimist = require("minimist");
-const {joinPath, convertToUrl} = require("@thimpat/libutils");
+const {joinPath, convertToUrl, sleep} = require("@thimpat/libutils");
 
 const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
@@ -12,6 +12,7 @@ const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
 const {getLoggable, setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD} = require("./constants.cjs");
+const {ltr} = require("semver");
 
 // ----------------------------------------------------------------
 // Run from Genserve thread
@@ -177,11 +178,11 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
         }
 
         registerHit({
-            ip: ip,
+            ip            : ip,
             acceptLanguage: headers["accept-language"],
-            userAgent: headers["user-agent"],
-            pathname: infoReq.pathname,
-            search: infoReq.search,
+            userAgent     : headers["user-agent"],
+            pathname      : infoReq.pathname,
+            search        : infoReq.search,
             seen
         });
 
@@ -195,49 +196,6 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
     return false;
 }
 
-/**
- * GenServe message handler
- * Entrypoint for requests
- * @param pagePattern
- * @param action
- * @param req
- * @param res
- * @param headers
- * @param connection
- * @param socket
- * @param data
- * @param extraData
- * @param ip
- * @returns {boolean}
- */
-function onGenserveMessage({loggable}, {
-    action,
-    headers,
-    req,
-    res,
-    data,
-    extraData,
-    ip,
-    informingPluginsResult = {}
-} = {})
-{
-    try
-    {
-        if (action === "request")
-        {
-            data = data || {};
-
-            const {seen} = informingPluginsResult;
-
-            trackData(req, res, {headers, ip, data, extraData, seen}, {loggable});
-        }
-    }
-    catch (e)
-    {
-        loggable.error({lid: 2125}, e.message);
-    }
-
-}
 
 /**
  * Set up the engine
@@ -257,9 +215,6 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
 
         startLogEngine(server, namespace);
 
-        // Set a listener on Genserve events
-        process.on("message", onGenserveMessage.bind(null, {loggable}));
-
         return true;
     }
     catch (e)
@@ -271,60 +226,94 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
 };
 
 /**
- * This method is called when Genserve forks this plugin {@link startPlugin}
- * or when genserve invokes importScriptByType
+ * GenServe message handler
+ * Entrypoint for requests
+ * @param pagePattern
+ * @param action
+ * @param req
+ * @param res
+ * @param headers
+ * @param data
+ * @param extraData
+ * @param ip
  * @returns {boolean}
  */
-function init()
+function onGenserveMessage({
+                               action,
+                               headers,
+                               req,
+                               res,
+                               data,
+                               extraData,
+                               ip,
+                               informingPluginsResult = {},
+                               session,
+                               genserveDir,
+                               genserveVersion,
+                               genserveName,
+                               options,
+                               loggable
+                           } = {})
 {
     try
     {
-        const argv = minimist(process.argv.slice(2));
+        data = data || {};
 
-        // Ignore all calls from genserve#importScriptByType
-        if (!argv.session)
+        if (action === "initialisation")
         {
-            return true;
-        }
+            setGenserveDir(genserveDir);
 
-        if (!argv.genserveDir)
+            // Only the forked process processes this line
+            setupEngine({session, options}, {loggable});
+
+            process.send && process.send("initialised");
+        }
+        else if (action === "request")
         {
-            console.error({lid: 2183}, `WebAnalyst does not support this Genserve version`);
-            return false;
+            const {seen} = informingPluginsResult;
+
+            trackData(req, res, {headers, ip, data, extraData, seen}, {loggable});
         }
-
-        setGenserveDir(argv.genserveDir);
-
-        const loggable = getLoggable();
-
-        // Only the forked process processes this line
-        setupEngine(argv, {loggable});
-
-        process.send && process.send(`INITIALISED`);
-
-        return true;
     }
     catch (e)
     {
-        console.error({lid: 2187}, e.message);
+        loggable.error({lid: 2125}, e.message);
     }
 
-    return false;
 }
 
+// Do not use console.log
 (async function ()
 {
     try
     {
-        init();
+        const argv = minimist(process.argv.slice(2));
+        if (argv.genserveDir)
+        {
+            // Set a listener on Genserve events
+            if (ltr(argv.genserveVersion, "5.6.0"))
+            {
+                process.send && process.send("incompatible");
+                await sleep(200);
+                return;
+            }
+
+            if (argv.genserveDir)
+            {
+                process.send && process.send("loaded");
+                process.on("message", onGenserveMessage);
+                await sleep(200);
+            }
+        }
     }
     catch (e)
     {
-        console.error({lid: 2315}, e.message);
+        console.error(e);
     }
 
 }());
 
+
+module.exports.onGenserveMessage = onGenserveMessage;
 module.exports.onInformingPlugins = onInformingPlugins;
 module.exports.onInit = onInit;
-module.exports.init = init;
