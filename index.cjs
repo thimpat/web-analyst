@@ -298,7 +298,7 @@ function onGenserveMessage({
         if (argv.genserveDir)
         {
             // Set a listener on Genserve events
-            if (ltr(argv.genserveVersion, "5.6.0"))
+            if (argv.genserveVersion && ltr(argv.genserveVersion, "5.6.0"))
             {
                 process.send && process.send("incompatible");
                 await sleep(200);
