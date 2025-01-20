@@ -3,6 +3,9 @@ const {getOptions, setOptions} = require("../lib/utils/options.cjs");
 const {PLUGIN_NAME} = require("../constants.cjs");
 
 /**
+ * Runs incoming request against the matching validator and returns information
+ * related to its availability, rights, etc.
+ * {@link onRequestServer} -> {@link getItem} -> {@link searchItem} -> {@link onValidate}
  * @param req
  * @param res
  * @param session
@@ -22,7 +25,7 @@ const onValidate = async (req, res, {session = null, loggable = null} = {}) =>
         if (!pluginOptions || !Object.keys(pluginOptions).length)
         {
             const plugins = session.plugins || [];
-            const indexPlugin = plugins.findIndex(x => x.name === PLUGIN_NAME);;
+            const indexPlugin = plugins.findIndex(x => x.name === PLUGIN_NAME);
             pluginOptions = plugins[indexPlugin];
             setOptions(pluginOptions);
         }
@@ -31,7 +34,7 @@ const onValidate = async (req, res, {session = null, loggable = null} = {}) =>
     }
     catch (e)
     {
-        loggable.error({lid: 1000}, e.message);
+        loggable.error({lid: "WA2309"}, e.message);
     }
 
     return {allowed: false};

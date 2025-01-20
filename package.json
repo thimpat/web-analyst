@@ -1,6 +1,6 @@
 {
   "name": "web-analyst",
-  "version": "3.2.3",
+  "version": "3.5.2",
   "description": "Web Analyst is a simple back-end tracking system to measure your web app performance.",
   "author": {
     "name": "Patrice THIMOTHEE",
@@ -39,12 +39,14 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@thimpat/libutils": "^1.13.0",
+    "@thimpat/libutils": "^1.15.8",
     "accept-language-parser": "^1.5.0",
+    "analogger": "^1.22.1",
     "chart.js": "^1.1.1",
-    "clonefile": "^3.2.2",
+    "clonefile": "^3.7.2",
     "jsonwebtoken": "^8.5.1",
     "minimist": "^1.2.7",
+    "semver": "^7.5.4",
     "tabulator-tables": "^5.4.1",
     "ua-parser-js": "^0.7.9",
     "useragent": "^2.3.0"
@@ -62,7 +64,7 @@
     "chromium": "^3.0.3",
     "eslint": "^8.25.0",
     "genserve": "file:../genserve",
-    "glob": "^8.0.3",
+    "glob": "^11.0.1",
     "mocha": "^10.2.0",
     "selenium-webdriver": "^4.7.1",
     "shelljs": "^0.8.5",

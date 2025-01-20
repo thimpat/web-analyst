@@ -11,7 +11,7 @@ const checkRequest = async (req, res, {loggable = null} = {}) =>
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        console.error({lid: "WA2305"}, e.message);
     }
 
     return res.end(JSON.stringify({success: false, message: `Processing error`}));
@@ -27,7 +27,7 @@ const onRequest = async (req, res, {loggable = null} = {}) =>
     }
     catch (e)
     {
-        console.error({lid: 1000}, e.message);
+        console.error({lid: "WA2307"}, e.message);
     }
 
     return {
