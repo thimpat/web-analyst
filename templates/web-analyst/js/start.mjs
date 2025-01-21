@@ -74,7 +74,7 @@ const init = async () =>
     }
     catch (e)
     {
-        console.error({lid: 2153}, e.message);
+        console.error({lid: "WA2153"}, e.message);
     }
 
     return false;
@@ -91,7 +91,7 @@ const init = async () =>
     }
     catch (e)
     {
-        console.error({lid: 2147}, e.message);
+        console.error({lid: "WA2147"}, e.message);
     }
 
     return false;

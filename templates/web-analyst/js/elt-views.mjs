@@ -79,7 +79,7 @@ export const buildVisitorChart = async function (pathname, {
     }
     catch (e)
     {
-        console.error({lid: 2437}, e.message);
+        console.error({lid: "WA2437"}, e.message);
     }
 
     return false;

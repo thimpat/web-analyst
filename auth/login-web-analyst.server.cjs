@@ -71,7 +71,7 @@ const showLoginPage = (req, res, {session, loggable = null} = {}) =>
     }
     catch (e)
     {
-        loggable.error({lid: 6541}, e.message);
+        loggable.error({lid: "WA6541"}, e.message);
     }
 
     return null;

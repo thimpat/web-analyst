@@ -103,7 +103,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         const serverUrl = convertToUrl(session);
         pluginOptions.url = serverUrl + PAGES.LOGIN_PAGE_NAME;
 
-        loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
+        loggable.log({lid: "WA2002", color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
         return true;
     }
@@ -193,7 +193,7 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
     }
     catch (e)
     {
-        loggable.error({lid: 5441}, e.message);
+        loggable.error({lid: "WA5441"}, e.message);
     }
 
     return false;
@@ -226,7 +226,7 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
     }
     catch (e)
     {
-        loggable.error({lid: 2189}, e.message);
+        loggable.error({lid: "WA2189"}, e.message);
     }
 
     return false;
@@ -284,7 +284,7 @@ function onGenserveMessage({
     }
     catch (e)
     {
-        loggable.error({lid: 2125}, e.message);
+        loggable.error({lid: "WA2125"}, e.message);
     }
 
 }

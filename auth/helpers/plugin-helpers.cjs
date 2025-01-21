@@ -15,7 +15,7 @@ const getPluginOptions = function ({session, pluginName, loggable})
     }
     catch (e)
     {
-        loggable.error({lid: 7549}, e.message);
+        loggable.error({lid: "WA7549"}, e.message);
     }
 
     return null;

@@ -23,7 +23,7 @@ export function generateGenericChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -56,7 +56,7 @@ export function generateGenericPieChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -85,7 +85,7 @@ export function generateBarChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -119,7 +119,7 @@ export function generatePieChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;

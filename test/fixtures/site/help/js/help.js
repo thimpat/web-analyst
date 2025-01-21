@@ -7,7 +7,7 @@ const init = () =>
     }
     catch (e)
     {
-        console.error({lid: 6543}, e.message);
+        console.error({lid: "WA6543"}, e.message);
     }
 
     return false;
