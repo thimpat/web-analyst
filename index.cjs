@@ -159,6 +159,7 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
     try
     {
         const infoReq = url.parse(req.url, true);
+        headers = req.headers || headers || {};
 
         for (let k in headers)
         {
@@ -279,7 +280,7 @@ function onGenserveMessage({
         {
             const {seen} = informingPluginsResult;
 
-            trackData(req, res, {headers, ip, data, extraData, seen}, {loggable});
+            trackData(req, res, {headers, ip, data, extraData, seen, genserveVersion, genserveName}, {loggable});
         }
     }
     catch (e)
