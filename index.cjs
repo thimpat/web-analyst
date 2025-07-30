@@ -25,13 +25,10 @@ const {ltr} = require("semver");
  * @param loggable
  * @returns {{seen: boolean}}
  */
-const processSeenStatus = function (req, res, {loggable = null} = {})
-{
-    try
-    {
+const processSeenStatus = function (req, res, {loggable = null} = {}) {
+    try {
         const cookieString = req.headers.cookie;
-        if (!cookieString)
-        {
+        if (!cookieString) {
             const expiration = Date.now() + (60 * 60) * 1000 * 24;
             res.setHeader("Set-Cookie", [`web-analyst-token=485; HttpOnly`, `expires=${new Date(expiration)}`]);
 
@@ -39,9 +36,7 @@ const processSeenStatus = function (req, res, {loggable = null} = {})
         }
 
         return {seen: true};
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "WA5427"}, e.message);
     }
 
@@ -60,27 +55,20 @@ const processSeenStatus = function (req, res, {loggable = null} = {})
  * @param loggable
  * @returns {boolean}
  */
-const onInit = async function ({options: pluginOptions, session, loggable})
-{
-    try
-    {
+const onInit = async function ({options: pluginOptions, session, loggable}) {
+    try {
         let dir = pluginOptions.staticDirs || pluginOptions.dir || ["./stats/"];
-        if (!Array.isArray(dir))
-        {
+        if (!Array.isArray(dir)) {
             dir = [dir];
         }
 
         const authDir = joinPath(__dirname, "auth/");
         const dynDir = authDir;
 
-        if (!process.env.JWT_SECRET_TOKEN)
-        {
-            if (pluginOptions.token)
-            {
+        if (!process.env.JWT_SECRET_TOKEN) {
+            if (pluginOptions.token) {
                 setJwtSecretToken(pluginOptions.token);
-            }
-            else
-            {
+            } else {
                 setJwtSecretToken(Math.random() * 99999999 + "");
             }
         }
@@ -106,9 +94,7 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         loggable.log({lid: "WA2002", color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
         return true;
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "GS7547"}, e.message);
     }
 
@@ -127,20 +113,15 @@ const onInit = async function ({options: pluginOptions, session, loggable})
  * @param loggable
  * @returns {{[seen]: boolean}}
  */
-const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {})
-{
-    try
-    {
+const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {}) {
+    try {
         const {options} = pluginProps || {};
-        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE)
-        {
+        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE) {
             return {};
         }
 
         return processSeenStatus(req, res, {loggable});
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "WA6553"}, e.message);
     }
 
@@ -154,46 +135,39 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = null} = {})
-{
-    try
-    {
+function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = null} = {}) {
+    try {
         const infoReq = url.parse(req.url, true);
         headers = req.headers || headers || {};
 
-        for (let k in headers)
-        {
+        for (let k in headers) {
             headers[k] = headers[k] || "";
         }
 
-        for (let k in infoReq)
-        {
+        for (let k in infoReq) {
             infoReq[k] = infoReq[k] || "";
         }
 
-        if (isIgnorePattern(infoReq.pathname))
-        {
+        if (isIgnorePattern(infoReq.pathname)) {
             return;
         }
 
-        if (!isPagePattern(infoReq.pathname))
-        {
+        if (!isPagePattern(infoReq.pathname)) {
             return;
         }
 
         registerHit({
-            ip            : ip,
+            ip: ip,
             acceptLanguage: headers["accept-language"],
-            userAgent     : headers["user-agent"],
-            pathname      : infoReq.pathname,
-            search        : infoReq.search,
+            userAgent: headers["user-agent"],
+            pathname: infoReq.pathname,
+            search: infoReq.search,
+            referer: headers["referer"],
             seen
         });
 
         return true;
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "WA5441"}, e.message);
     }
 
@@ -207,10 +181,8 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
  * - Save session data (in the plugin memory space process)
  * - Review and update stats plugin options
  */
-const setupEngine = function ({session, options}, {loggable = null} = {})
-{
-    try
-    {
+const setupEngine = function ({session, options}, {loggable = null} = {}) {
+    try {
         // Save session information in plugin progress
         setSession(session);
 
@@ -224,9 +196,7 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
         startLogEngine(server, namespace);
 
         return true;
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "WA2189"}, e.message);
     }
 
@@ -261,61 +231,47 @@ function onGenserveMessage({
                                genserveName,
                                options,
                                loggable
-                           } = {})
-{
-    try
-    {
+                           } = {}) {
+    try {
         data = data || {};
 
-        if (action === "initialisation")
-        {
+        if (action === "initialisation") {
             setGenserveDir(genserveDir);
 
             // Only the forked process processes this line
             setupEngine({session, options}, {loggable});
 
             process.send && process.send("initialised");
-        }
-        else if (action === "request")
-        {
+        } else if (action === "request") {
             const {seen} = informingPluginsResult;
 
             trackData(req, res, {headers, ip, data, extraData, seen, genserveVersion, genserveName}, {loggable});
         }
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "WA2125"}, e.message);
     }
 
 }
 
 // Do not use console.log
-(async function ()
-{
-    try
-    {
+(async function () {
+    try {
         const argv = minimist(process.argv.slice(2));
-        if (argv.genserveDir)
-        {
+        if (argv.genserveDir) {
             // Set a listener on Genserve events
-            if (argv.genserveVersion && ltr(argv.genserveVersion, "5.6.0"))
-            {
+            if (argv.genserveVersion && ltr(argv.genserveVersion, "5.6.0")) {
                 process.send && process.send("incompatible");
                 await sleep(200);
                 return;
             }
 
-            if (argv.genserveDir)
-            {
+            if (argv.genserveDir) {
                 process.send && process.send("loaded");
                 process.on("message", onGenserveMessage);
                 await sleep(200);
             }
         }
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error(e);
     }
 

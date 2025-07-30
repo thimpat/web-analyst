@@ -4,9 +4,9 @@ import {
     generateGenericChart,
     generatePieChart,
     getData
-} from "./chart-generator.mjs";
-import {CHART_DATA_FILES, VIEW_TYPE} from "./constants.mjs";
-import {getWeekLabels, getYearLabels} from "./fixed-label-generator.mjs";
+} from "./wa-chart-generator.mjs";
+import {CHART_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
+import {getWeekLabels, getYearLabels} from "./wa-fixed-label-generator.mjs";
 
 export const buildVisitorChart = async function (pathname, {
     $chart, style1, style2, title, subTitle
@@ -312,13 +312,13 @@ export const buildEarningsGraph = async function (pathname, {$chart, title, subT
     return false;
 };
 
-export const buildDataTable = async function (pathname)
+export const buildDataTable = async function (pathname, selector)
 {
     try
     {
         // Data
         const dataTables = await getData(pathname);
-        generateDataTables("#endpoint-table", {data: dataTables});
+        generateDataTables(selector, {data: dataTables});
 
         return true;
     }

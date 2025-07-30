@@ -1,8 +1,8 @@
 import {
     buildVisitorGraph,
     buildPopularityGraph, buildDataTable, buildEarningsGraph
-} from "./elt-views.mjs";
-import {CHART_DATA_FILES, VIEW_TYPE} from "./constants.mjs";
+} from "./wa-elt-views.mjs";
+import {CHART_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
 
 
 const init = async () =>
@@ -51,7 +51,8 @@ const init = async () =>
         // ------------------------------------------------
         // Endpoint frequencies
         // ------------------------------------------------
-        await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME);
+        await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME, "#endpoint-table");
+        await buildDataTable(CHART_DATA_FILES.REFERRERS_DATA_FILENAME, "#referrer-table");
 
         // ------------------------------------------------
         // Earnings
