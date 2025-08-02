@@ -31,7 +31,7 @@ const setCookieVisitor = function (req, res, {loggable = null} = {}) {
         const visitorIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
         const cookies = cookieString.split(";").map(c => c.trim());
-        const tokenCookie = cookies.find(c => c.startsWith("web-analyst-token="));
+        const tokenCookie = cookies.find(c => c.startsWith("wa-token="));
         let token = tokenCookie ? tokenCookie.split("=")[1] : null;
 
         const now = new Date();
