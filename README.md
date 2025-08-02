@@ -63,7 +63,8 @@ $> npm install web-analyst
         "some-email@example.com": {
           "password": "secret"
         }
-      }
+      },
+      "detectionMethodUnique": "cookie"
     }
   ]
 }
@@ -79,6 +80,7 @@ All values are optional apart from the name
 * users      : Users allowed to the statistic area. Default => user:admin password:admin
 * credentials: Path to a .cjs file containing allowed user list .i.e "/path/to/credentials.cjs" (The above field has 
   precedence over this one) 
+* detectionMethodUnique: Whether to use cookie to calculate unique visitors (more precise)
  
 
 <br/>
