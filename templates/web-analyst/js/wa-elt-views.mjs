@@ -57,14 +57,132 @@ export const buildVisitorChart = async function (pathname, {
                     text   : title
                 }
             },
-            // scales    : {
-            //     x: {
-            //         stacked: true,
-            //     },
-            //     y: {
-            //         stacked: true
-            //     }
-            // }
+        };
+
+        generateBarChart($chart, {
+            title          : subTitle,
+            data,
+            options        : options1,
+            backgroundColor: "rgb(180,181,217)",
+            borderColor    : "rgb(76,87,134)",
+        });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: "WA2437"}, e.message);
+    }
+
+    return false;
+};
+
+export const buildViewsUsersChart = async function (arr, {
+    $chart, title, subTitle
+})
+{
+    try
+    {
+        // Import data file
+        const jsonData = {};
+        for (let index in arr)
+        {
+            const pathname = arr[index];
+            const data = await getData(pathname) || {};
+            Object.assign(jsonData, data);
+        }
+
+        const datasets = [];
+        // Build data by category
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // Define a palette of colors for your datasets
+        const colors = [
+            "rgba(255, 99, 132, 0.7)",  // Red
+            "rgba(54, 162, 235, 0.7)",  // Blue
+            "rgba(255, 206, 86, 0.7)",  // Yellow
+            "rgba(75, 192, 192, 0.7)",  // Green
+            "rgba(153, 102, 255, 0.7)", // Purple
+            "rgba(255, 159, 64, 0.7)",  // Orange
+            "rgba(199, 199, 199, 0.7)", // Grey
+            "rgba(120,73,73,0.7)",
+        ];
+
+        const categories = [2, 4, 9, 19, 1000];
+        let start = categories[0];
+
+        const viewsPerUsers = [];
+        for (let index in categories)
+        {
+            const dataset = {};
+            const limit = categories[index];
+            const categoryIndex = parseInt(index);
+            if (!categoryIndex) {
+                dataset.label = `Number of users with less than ${limit} page views`;
+            }
+            else if (categoryIndex === categories.length - 1) {
+                dataset.label = `Number of users with more than ${start} page views`;
+            }
+            else {
+                dataset.label = `Number of users with ${start} to ${limit} page views`;
+            }
+
+            dataset.backgroundColor = colors[index];
+
+            // Value of page views users every month per range
+            dataset.data = Array(categories.length).fill(0);
+
+            for (let m = 0; m < months.length; m++)
+            {
+                for (let userIPToken in jsonData)
+                {
+                    const info = jsonData[userIPToken];
+
+                    const monthNumber = new Date(info.lastVisit || info.date || info.realDate || info.initialDate).getMonth();
+                    if (m !== monthNumber)
+                    {
+                        continue;
+                    }
+
+                    if (info.visited <= limit)
+                    {
+                        dataset.data[m] = dataset.data[m] || [];
+                        ++dataset.data[m];
+                        delete jsonData[userIPToken];
+                    }
+                }
+
+                start = limit + 1;
+            }
+            datasets.push(dataset);
+
+        }
+
+        const data = {
+            labels: months,
+            datasets
+        };
+
+        // Build DOM element
+        const options1 = {
+            responsive: true,
+            plugins   : {
+                legend: {
+                    position: "top",
+                },
+                title : {
+                    display: true,
+                    text   : title
+                }
+            },
+            scales    : {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                }
+            }
         };
 
         generateBarChart($chart, {
@@ -267,6 +385,28 @@ export const buildVisitorGraph = async function (pathname, {$chart, title, subTi
                     backgroundColor: "rgb(188,217,180)",
                     borderColor    : "rgb(76,134,123)",
                 },
+                title,
+                subTitle
+            });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2437}, e.message);
+    }
+
+    return false;
+};
+
+export const buildViewsUsersGraph = async function (arr, {$chart, title, subTitle})
+{
+    try
+    {
+        // Build DOM element
+        await buildViewsUsersChart(arr,
+            {
+                $chart,
                 title,
                 subTitle
             });

@@ -1,8 +1,8 @@
 import {
     buildVisitorGraph,
-    buildPopularityGraph, buildDataTable, buildEarningsGraph
+    buildPopularityGraph, buildDataTable, buildEarningsGraph, buildViewsUsersGraph
 } from "./wa-elt-views.mjs";
-import {CHART_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
+import {CHART_DATA_FILES, LIST_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
 
 
 const init = async () =>
@@ -28,6 +28,15 @@ const init = async () =>
             $chart: document.getElementById("visitorsYear"),
             title   : "This year",
             subTitle: "Visitor per month"
+        });
+
+        // ------------------------------------------------
+        // Views per users
+        // ------------------------------------------------
+        await buildViewsUsersGraph([LIST_DATA_FILES.IPS_REFS, LIST_DATA_FILES.TOKENS], {
+            $chart: document.getElementById("ViewsUsersGraph"),
+            title   : "Views per users",
+            subTitle: "Views per users"
         });
 
         // ------------------------------------------------
