@@ -63,7 +63,7 @@
     "chromedriver": "^132.0.0",
     "chromium": "^3.0.3",
     "eslint": "^8.25.0",
-    "genserve": "file:../genserve",
+    "genserve": "^5.10.1",
     "glob": "^11.0.1",
     "mocha": "^10.2.0",
     "selenium-webdriver": "^4.28.0",
