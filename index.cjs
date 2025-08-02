@@ -10,37 +10,79 @@ const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
-const {getLoggable, setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
+const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
+const crypto = require("crypto");
 
 // ----------------------------------------------------------------
 // Run from Genserve thread
 // ----------------------------------------------------------------
 /**
- * Returns whether the client has already contacted the server,
- * otherwise add a cookie to the client to be detected next time
+ * Sets a cookie with a unique token if the visitor is new, and returns token + IP
  * @param req
  * @param res
  * @param loggable
- * @returns {{seen: boolean}}
+ * @returns {{visitorIp: (*|(() => AddressInfo)|string), token: string, expiration: string, createdAt: number}|null}
  */
-const processSeenStatus = function (req, res, {loggable = null} = {}) {
+const setCookieVisitor = function (req, res, {loggable = null} = {}) {
     try {
-        const cookieString = req.headers.cookie;
-        if (!cookieString) {
-            const expiration = Date.now() + (60 * 60) * 1000 * 24;
-            res.setHeader("Set-Cookie", [`web-analyst-token=485; HttpOnly`, `expires=${new Date(expiration)}`]);
+        const cookieString = req.headers.cookie || "";
+        const visitorIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
-            return {seen: false};
+        const cookies = cookieString.split(";").map(c => c.trim());
+        const tokenCookie = cookies.find(c => c.startsWith("web-analyst-token="));
+        let token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+        const now = new Date();
+        const createdAt = now.getTime();
+        const expiration = new Date(createdAt + 24 * 60 * 60 * 1000 * 31).toUTCString();
+
+        if (!token) {
+            token = crypto.randomUUID();
+
+            res.setHeader("Set-Cookie", [
+                `wa-token=${token}; HttpOnly; Path=/; Expires=${expiration}`,
+                `wa-created-at=${createdAt}; Path=/; Expires=${expiration}`
+            ]);
+
+            loggable?.info?.({lid: "WA5433"}, `New visitor IP: ${visitorIp}, Token: ${token}, CreatedAt: ${createdAt}`);
+        } else {
+            loggable?.info?.({lid: "WA5434"}, `Returning visitor IP: ${visitorIp}, Token: ${token}`);
         }
 
-        return {seen: true};
+        return {visitorIp, token, expiration, createdAt};
     } catch (e) {
-        loggable.error({lid: "WA5427"}, e.message);
+        loggable?.error?.({lid: "WA5435"}, e.message);
     }
 
-    return {seen: false};
+    return null;
+};
+
+/**
+ * Retrieves the visitor's token and IP address
+ * @param req
+ * @param loggable
+ * @returns {{token: string|null, ip: string|null}}
+ */
+const getCookieVisitor = function (req, {loggable = null} = {}) {
+    try {
+        const cookieString = req.headers.cookie || "";
+        const visitorIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+        const cookies = cookieString.split(";").map(c => c.trim());
+        const tokenCookie = cookies.find(c => c.startsWith("wa-token="));
+        const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+        const createdAtCookie = cookies.find(c => c.startsWith("wa-created-at="));
+        const createdAt = createdAtCookie ? parseInt(createdAtCookie.split("=")[1], 10) : null;
+
+        return {token, ip: visitorIp, createdAt};
+    } catch (e) {
+        loggable?.error?.({lid: "WA5432"}, e.message);
+    }
+
+    return null;
 };
 
 /**
@@ -111,21 +153,28 @@ const onInit = async function ({options: pluginOptions, session, loggable}) {
  * @param res
  * @param {*} pluginProps
  * @param loggable
- * @returns {{[seen]: boolean}}
+ * @returns {{visitorIp: (*|(function(): AddressInfo)|string), token: string, expiration: string, createdAt: number}|null}
  */
 const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {}) {
     try {
         const {options} = pluginProps || {};
-        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE) {
-            return {};
+
+        // The function was called from a non-request call (GenServe Initialisation time)
+        if (!req) {
+            return null;
         }
 
-        return processSeenStatus(req, res, {loggable});
+        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE) {
+            return null;
+        }
+
+        const result = setCookieVisitor(req, res, {loggable});
+        return result || null;
     } catch (e) {
         loggable.error({lid: "WA6553"}, e.message);
     }
 
-    return {};
+    return null;
 };
 
 // ----------------------------------------------------------------
@@ -135,7 +184,7 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = null} = {}) {
+function trackData(req, res, {headers = {}, ip, cookieData = null, options} = {}, {loggable = null} = {}) {
     try {
         const infoReq = url.parse(req.url, true);
         headers = req.headers || headers || {};
@@ -163,7 +212,7 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
             pathname: infoReq.pathname,
             search: infoReq.search,
             referer: headers["referer"],
-            seen
+            cookieData
         });
 
         return true;
@@ -243,9 +292,15 @@ function onGenserveMessage({
 
             process.send && process.send("initialised");
         } else if (action === "request") {
-            const {seen} = informingPluginsResult;
+            let cookieData;
+            if (options.detectionMethodUnique === "cookie") {
+                cookieData = informingPluginsResult;
+                if (!cookieData) {
+                    getCookieVisitor(req, {loggable});
+                }
+            }
 
-            trackData(req, res, {headers, ip, data, extraData, seen, genserveVersion, genserveName}, {loggable});
+            trackData(req, res, {headers, ip, data, extraData, cookieData, genserveVersion, genserveName, options}, {loggable});
         }
     } catch (e) {
         loggable.error({lid: "WA2125"}, e.message);

@@ -14,6 +14,8 @@ const LIST_DATA_FILES = {
     ENDPOINTS_REFS: `indexers/endpoints.json`,
     LANGUAGES_REF : `indexers/languages.json`,
     REFERRES_REF : `indexers/referrers.json`,
+    // User token table (Random generated tokens in cookies)
+    TOKENS : `indexers/tokens.json`,
 };
 
 const CHART_DATA_FILES = {
