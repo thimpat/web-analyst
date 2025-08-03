@@ -6,6 +6,7 @@ import {
     getData
 } from "./wa-chart-generator.mjs";
 import {CHART_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
+import {CHART_OPTIONS} from "./user-options.mjs";
 import {getWeekLabels, getYearLabels} from "./wa-fixed-label-generator.mjs";
 
 export const buildVisitorChart = async function (pathname, {
@@ -108,10 +109,9 @@ export const buildViewsUsersChart = async function (arr, {
             "rgba(120,73,73,0.7)",
         ];
 
-        const categories = [2, 4, 9, 19, 1000];
+        const categories = CHART_OPTIONS.PageViewsPerUsers.ranges || [2, 9, 10000];
         let start = categories[0];
 
-        const viewsPerUsers = [];
         for (let index in categories)
         {
             const dataset = {};
