@@ -18,6 +18,9 @@ npm install web-analyst
 
 <br/>
 
+After each update, it's recommended to delete the folder stats/<namespace>/web-analyst and the html file stats/<namespace>/index.html.
+The folder stats/<namespace>/data should not be removed.
+
 ---
 
 ## 3. Usage
