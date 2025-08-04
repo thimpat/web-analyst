@@ -230,7 +230,7 @@ function trackData(req, res, {headers = {}, ip, cookieData = null, options} = {}
  * - Save session data (in the plugin memory space process)
  * - Review and update stats plugin options
  */
-const setupEngine = function ({session, options}, {loggable = null} = {}) {
+const setupEngine = function ({session, options, action}, {loggable = null} = {}) {
     try {
         // Save session information in plugin progress
         setSession(session);
@@ -242,7 +242,7 @@ const setupEngine = function ({session, options}, {loggable = null} = {}) {
         const statDir = "/" + server + "." + namespace + "/";
         setOptions(options, {ignore: statDir});
 
-        startLogEngine(server, namespace);
+        startLogEngine(server, namespace, action);
 
         return true;
     } catch (e) {
@@ -288,7 +288,7 @@ function onGenserveMessage({
             setGenserveDir(genserveDir);
 
             // Only the forked process processes this line
-            setupEngine({session, options}, {loggable});
+            setupEngine({action, session, options}, {loggable});
 
             process.send && process.send("initialised");
         } else if (action === "request") {

@@ -10,7 +10,7 @@ import {CHART_OPTIONS} from "./user-options.mjs";
 import {getWeekLabels, getYearLabels} from "./wa-fixed-label-generator.mjs";
 
 export const buildVisitorChart = async function (pathname, {
-    $chart, style1, style2, title, subTitle
+    $chart, style1, style2, style3, title, subTitle
 })
 {
     try
@@ -18,11 +18,21 @@ export const buildVisitorChart = async function (pathname, {
         const jsonData = await getData(pathname);
 
         // Build datasets
-        const {dataVisitors, dataUniqueVisitors, labels} = jsonData;
+        const {dataVisitors, dataUniqueVisitors, dataReturningVisitors, labels} = jsonData;
         if (!dataVisitors || !dataUniqueVisitors)
         {
             console.error(`Missing data visitors`);
             return;
+        }
+
+        for (let i = 0; i < dataReturningVisitors.length; ++i) {
+            const returningVisitorList = dataReturningVisitors[i];
+            if (Array.isArray(returningVisitorList)) {
+                dataReturningVisitors[i] = returningVisitorList.length;
+            }
+            else {
+                dataReturningVisitors[i] = 0;
+            }
         }
 
         const datasets = [
@@ -30,6 +40,11 @@ export const buildVisitorChart = async function (pathname, {
                 label: "Visitors unique",
                 data : dataUniqueVisitors,
                 ...style1,
+            },
+            {
+                label: "Returning Visitors",
+                data : dataReturningVisitors,
+                ...style3,
             },
             {
                 label: "Visits",
@@ -384,6 +399,10 @@ export const buildVisitorGraph = async function (pathname, {$chart, title, subTi
                 style2: {
                     backgroundColor: "rgb(188,217,180)",
                     borderColor    : "rgb(76,134,123)",
+                },
+                style3: {
+                    backgroundColor: "rgb(209,182,134)",
+                    borderColor    : "rgb(122,102,66)",
                 },
                 title,
                 subTitle
