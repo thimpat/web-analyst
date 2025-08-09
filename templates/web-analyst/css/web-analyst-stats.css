@@ -2,6 +2,11 @@ body {
   height: 100%;
 }
 
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 .container {
   display: block;
   margin: auto;
