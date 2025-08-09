@@ -184,7 +184,7 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, cookieData = null, options} = {}, {loggable = null} = {}) {
+function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}} = {}, {loggable = null} = {}) {
     try {
         const infoReq = url.parse(req.url, true);
         headers = req.headers || headers || {};
@@ -212,7 +212,8 @@ function trackData(req, res, {headers = {}, ip, cookieData = null, options} = {}
             pathname: infoReq.pathname,
             search: infoReq.search,
             referer: headers["referer"],
-            cookieData
+            cookieData,
+            options
         });
 
         return true;
