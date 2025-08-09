@@ -14,6 +14,7 @@ const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
+const e = require("chai/chai.js");
 
 // ----------------------------------------------------------------
 // Run from Genserve thread
@@ -264,7 +265,7 @@ const setupEngine = function ({session, options, action}, {loggable = null} = {}
  * @param data
  * @param extraData
  * @param ip
- * @returns {boolean}
+ * @param {*} options
  */
 function onGenserveMessage({
                                action,
@@ -293,6 +294,23 @@ function onGenserveMessage({
 
             process.send && process.send("initialised");
         } else if (action === "request") {
+            // Filter urls
+            if (options.pages) {
+                const pages = options.pages || [];
+                let allowed = false;
+                for (const allowedUrl of pages) {
+                    const regex = new RegExp(allowedUrl, "i");
+                    if (regex.test(req.url)) {
+                        allowed = true;
+                    }
+                }
+
+                if (!allowed) {
+                    return;
+                }
+            }
+
+            // Retrieve cookie value for returning visitors
             let cookieData;
             if (options.detectionMethodUnique === "cookie") {
                 cookieData = informingPluginsResult;
@@ -301,7 +319,24 @@ function onGenserveMessage({
                 }
             }
 
-            trackData(req, res, {headers, ip, data, extraData, cookieData, genserveVersion, genserveName, options}, {loggable});
+            // @note: Not implemented. For future use
+            const swDetectString = options["service-worker-headers"];
+            let isFromServiceWorker = false;
+            if (swDetectString) {
+                isFromServiceWorker = !!req.headers[swDetectString];
+            }
+
+            trackData(req, res, {
+                headers,
+                ip,
+                data,
+                extraData,
+                cookieData,
+                genserveVersion,
+                genserveName,
+                options,
+                isFromServiceWorker
+            }, {loggable});
         }
     } catch (e) {
         loggable.error({lid: "WA2125"}, e.message);
