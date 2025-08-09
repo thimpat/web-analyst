@@ -10,7 +10,7 @@ import {CHART_OPTIONS} from "./user-options.mjs";
 import {getWeekLabels, getYearLabels} from "./wa-fixed-label-generator.mjs";
 
 export const buildVisitorChart = async function (pathname, {
-    $chart, style1, style2, style3, title, subTitle
+    $chart, style1, style2, style3, style4, title, subTitle
 })
 {
     try
@@ -18,8 +18,8 @@ export const buildVisitorChart = async function (pathname, {
         const jsonData = await getData(pathname);
 
         // Build datasets
-        const {dataVisitors, dataUniqueVisitors, dataReturningVisitors, labels} = jsonData;
-        if (!dataVisitors || !dataUniqueVisitors)
+        const {dataVisitors: dataVisits, dataUniqueVisitors, dataReturningVisitors, labels} = jsonData;
+        if (!dataVisits || !dataUniqueVisitors)
         {
             console.error(`Missing data visitors`);
             return;
@@ -35,6 +35,14 @@ export const buildVisitorChart = async function (pathname, {
             }
         }
 
+        const visitors = [];
+        const n = Math.max(dataUniqueVisitors.length, dataReturningVisitors.length);
+        for (let i = 0; i < n; ++i) {
+            const uniqueVisitor = dataUniqueVisitors[i] || 0;
+            const returningVisitor = dataReturningVisitors[i] || 0;
+            visitors[i] = uniqueVisitor + returningVisitor;
+        }
+
         const datasets = [
             {
                 label: "Visitors unique",
@@ -47,8 +55,13 @@ export const buildVisitorChart = async function (pathname, {
                 ...style3,
             },
             {
+                label: "Total Visitors",
+                data : visitors,
+                ...style4,
+            },
+            {
                 label: "Visits",
-                data : dataVisitors,
+                data : dataVisits,
                 ...style2,
             },
         ];
@@ -410,6 +423,10 @@ export const buildVisitorGraph = async function (pathname, {$chart, title, subTi
                 style3: {
                     backgroundColor: "rgb(209,182,134)",
                     borderColor    : "rgb(122,102,66)",
+                },
+                style4: {
+                    backgroundColor: "rgb(89,129,147)",
+                    borderColor    : "rgb(120,165,184)",
                 },
                 title,
                 subTitle
