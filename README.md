@@ -67,7 +67,8 @@ $> npm install web-analyst
           "password": "secret"
         }
       },
-      "detectionMethodUnique": "cookie"
+      "detectionMethodUnique": "cookie",
+      "hideEarningCharts": true
     }
   ]
 }
@@ -84,6 +85,7 @@ All values are optional apart from the name
 * credentials: Path to a .cjs file containing allowed user list .i.e "/path/to/credentials.cjs" (The above field has 
   precedence over this one) 
 * detectionMethodUnique: Whether to use cookie to calculate unique visitors (more precise)
+* hideEarningCharts: To hide charts related to earnings. You also must edit the HIDE_EARNING_CHARTS set in stats/config.mjs to true
  
 
 <br/>
