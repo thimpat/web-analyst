@@ -229,6 +229,13 @@ export const buildMoneyChart = async function (pathname, {
         // Build datasets
         let {months, days} = jsonData;
 
+        // Remove earning past today as they should all be 0
+        const now = new Date();
+        const month = now.getMonth();
+        const dayOfWeek = now.getDay();
+        months.splice(month);
+        days.splice(dayOfWeek);
+
         let labels, money;
         if (view === VIEW_TYPE.WEEK)
         {
