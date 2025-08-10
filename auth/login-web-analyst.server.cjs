@@ -21,14 +21,14 @@ let random = null;
  * Return login page content
  * @returns {string}
  */
-const generateHTML = ({loggable}) =>
+const generateHTML = (page, {loggable}) =>
 {
     try
     {
         // Load an HTML template compatible with Handlebars
         // They are not precompiled and therefore not optimised
         // const contentPath = path.join(__dirname, "./templates/login.hbs");
-        const contentPath = path.join(__dirname, "../web/login.hbs");
+        const contentPath = path.join(__dirname, "../web/", page);
         content = fs.readFileSync(contentPath, {encoding: "utf-8"});
         return content;
     }
@@ -50,7 +50,7 @@ const showLoginPage = (req, res, {session, loggable = null} = {}) =>
 {
     try
     {
-        content = content || generateHTML({loggable});
+        content = content || generateHTML("login.hbs", {loggable});
 
         random = Math.floor(Math.random() * 88888888) + 11111111;
 
@@ -79,6 +79,11 @@ const showLoginPage = (req, res, {session, loggable = null} = {}) =>
 
 // ---------------------------------------------
 // Check login information
+function showStatisticsPage(session, res, message) {
+    const destination = `/${session.serverName}.${session.namespace}/index.html`;
+    return res.end(JSON.stringify({success: true, message, destination}));
+}
+
 // ---------------------------------------------
 /**
  *
@@ -102,7 +107,7 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
                 logoutSession(req, res, {loggable});
             }
             res.end(JSON.stringify({success: false, message}));
-            return;
+            return false;
         }
 
         // if (data.random !== "" + random)
@@ -129,7 +134,7 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
 
                 // The developer has not set a credential file
                 res.end(JSON.stringify({success: false, message}));
-                return;
+                return false;
             }
 
             let credentialsPath = pluginOptions.credentials;
@@ -151,17 +156,11 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
             }
 
             res.end(JSON.stringify({success: false, message}));
-            return;
+            return false;
         }
 
         let success = loginSession(data.username, {req, res, session, creds, loggable});
-
-        let destination, message;
-        if (success)
-        {
-            destination = success ? `/${session.serverName}.${session.namespace}/index.html` : "";
-        }
-        else
+        if (!success)
         {
             const message = "Login failed";
             if (!isLogout(req))
@@ -169,17 +168,18 @@ const checkRequest = async (req, res, {session, pluginOptions, loggable = consol
                 logoutSession(req, res, {loggable});
             }
             res.end(JSON.stringify({success: false, message}));
-            return;
+            return false;
         }
 
-        return res.end(JSON.stringify({success, message, destination}));
+        return true;
     }
     catch (e)
     {
         loggable.error({lid: "WA2303"}, e.message);
     }
 
-    return res.end(JSON.stringify({success: false, message: `Processing error`}));
+    res.end(JSON.stringify({success: false, message: `Processing error`}));
+    return false;
 };
 
 /**
@@ -198,10 +198,16 @@ const onRequest = async (req, res, {session, loggable}) =>
     {
         return showLoginPage(req, res, {session});
     }
-    else if (req.method === "POST")
+
+    if (req.method === "POST")
     {
         const pluginOptions = getPluginOptions({session, pluginName: "web-analyst", loggable});
-        await checkRequest(req, res, {session, pluginOptions, loggable});
+        const okay = await checkRequest(req, res, {session, pluginOptions, loggable});
+        if (!okay) {
+            return null;
+        }
+
+        showStatisticsPage(session, res);
         return null;
     }
 };
