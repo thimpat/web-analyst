@@ -10,43 +10,147 @@ const {setOptions} = require("./lib/utils/options.cjs");
 const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
-const {getLoggable, setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
+const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
+const crypto = require("crypto");
+const { promisify } = require("util");
+const zlib = require("zlib");
+const gunzip = promisify(zlib.gunzip);
+const inflate = promisify(zlib.inflate);
+const inflateRaw = promisify(zlib.inflateRaw);
+
+
+// ----------------------------------------------------------------
+// Utility functions
+// ----------------------------------------------------------------
+async function decompressOnServer(compressedBase64, format = "gzip") {
+    const buffer = Buffer.from(compressedBase64, "base64");
+
+    try {
+        let decompressed;
+        switch (format) {
+            case "gzip":
+                decompressed = await gunzip(buffer);
+                break;
+            case "deflate":
+                decompressed = await inflate(buffer);
+                break;
+            case "deflate-raw":
+                decompressed = await inflateRaw(buffer);
+                break;
+            default:
+                throw new Error(`Unsupported format: ${format}`);
+        }
+        return decompressed.toString("utf-8");
+    } catch (error) {
+        console.error("Decompression failed:", error);
+        throw error;
+    }
+}
 
 // ----------------------------------------------------------------
 // Run from Genserve thread
 // ----------------------------------------------------------------
 /**
- * Returns whether the client has already contacted the server,
- * otherwise add a cookie to the client to be detected next time
+ * Sets a cookie with a unique token if the visitor is new, and returns token + IP
  * @param req
  * @param res
  * @param loggable
- * @returns {{seen: boolean}}
+ * @returns {{visitorIp: (*|(() => AddressInfo)|string), token: string, expiration: string, createdAt: number}|null}
  */
-const processSeenStatus = function (req, res, {loggable = null} = {})
-{
-    try
-    {
-        const cookieString = req.headers.cookie;
-        if (!cookieString)
-        {
-            const expiration = Date.now() + (60 * 60) * 1000 * 24;
-            res.setHeader("Set-Cookie", [`web-analyst-token=485; HttpOnly`, `expires=${new Date(expiration)}`]);
+const setCookieVisitor = function (req, res, {loggable = null} = {}) {
+    try {
+        const cookieString = req.headers.cookie || "";
+        const visitorIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
-            return {seen: false};
+        const cookies = cookieString.split(";").map(c => c.trim());
+        const tokenCookie = cookies.find(c => c.startsWith("wa-token="));
+        let token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+        const now = new Date();
+        const createdAt = now.getTime();
+        const expiration = new Date(createdAt + 24 * 60 * 60 * 1000 * 31).toUTCString();
+
+        if (!token) {
+            token = crypto.randomUUID();
+
+            res.setHeader("Set-Cookie", [
+                `wa-token=${token}; HttpOnly; Path=/; Expires=${expiration}`,
+                `wa-created-at=${createdAt}; Path=/; Expires=${expiration}`
+            ]);
+
+            loggable?.info?.({lid: "WA5433"}, `New visitor IP: ${visitorIp}, Token: ${token}, CreatedAt: ${createdAt}`);
+        } else {
+            loggable?.info?.({lid: "WA5434"}, `Returning visitor IP: ${visitorIp}, Token: ${token}`);
         }
 
-        return {seen: true};
-    }
-    catch (e)
-    {
-        loggable.error({lid: "WA5427"}, e.message);
+        return {visitorIp, token, expiration, createdAt};
+    } catch (e) {
+        loggable?.error?.({lid: "WA5435"}, e.message);
     }
 
-    return {seen: false};
+    return null;
 };
+
+/**
+ * Retrieves the visitor's token and IP address
+ * @param req
+ * @param loggable
+ * @returns {{token: string|null, ip: string|null}}
+ */
+const getCookieVisitor = function (req, {loggable = null} = {}) {
+    try {
+        const cookieString = req.headers.cookie || "";
+        const visitorIp = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+        const cookies = cookieString.split(";").map(c => c.trim());
+        const tokenCookie = cookies.find(c => c.startsWith("wa-token="));
+        const token = tokenCookie ? tokenCookie.split("=")[1] : null;
+
+        const createdAtCookie = cookies.find(c => c.startsWith("wa-created-at="));
+        const createdAt = createdAtCookie ? parseInt(createdAtCookie.split("=")[1], 10) : null;
+
+        return {token, ip: visitorIp, createdAt};
+    } catch (e) {
+        loggable?.error?.({lid: "WA5432"}, e.message);
+    }
+
+    return null;
+};
+
+/**
+ * Parse the analytics cookie that keeps screen resolution and other data related device
+ * @param req
+ * @param loggable
+ * @returns {Promise<any|undefined>}
+ */
+const getCookieAnalytics = async function (req, {loggable = null} = {}) {
+    try {
+        const cookieString = req.headers.cookie || "";
+        const cookies = cookieString.split(";").map(c => c.trim());
+
+        const analyticsCookie = cookies.find(c => c.startsWith("wa-plus="));
+        if (!analyticsCookie) {
+            return ;
+        }
+
+        const rawValue = analyticsCookie.split("=")[1];
+        if (!rawValue) {
+            return ;
+        }
+
+        try {
+            const originalText = await decompressOnServer(rawValue);
+            const json = JSON.parse(originalText);
+
+            return json;
+        } catch (err) {
+            loggable?.warn?.({ lid: "WA5434" }, "Failed to decompress or parse client Analytics cookie");
+        }
+    } catch (e) {
+        loggable?.error?.({ lid: "WA5435" }, e.message);
+    }};
 
 /**
  * Add extra information to the plugin options.
@@ -60,27 +164,20 @@ const processSeenStatus = function (req, res, {loggable = null} = {})
  * @param loggable
  * @returns {boolean}
  */
-const onInit = async function ({options: pluginOptions, session, loggable})
-{
-    try
-    {
+const onInit = async function ({options: pluginOptions, session, loggable}) {
+    try {
         let dir = pluginOptions.staticDirs || pluginOptions.dir || ["./stats/"];
-        if (!Array.isArray(dir))
-        {
+        if (!Array.isArray(dir)) {
             dir = [dir];
         }
 
         const authDir = joinPath(__dirname, "auth/");
         const dynDir = authDir;
 
-        if (!process.env.JWT_SECRET_TOKEN)
-        {
-            if (pluginOptions.token)
-            {
+        if (!process.env.JWT_SECRET_TOKEN) {
+            if (pluginOptions.token) {
                 setJwtSecretToken(pluginOptions.token);
-            }
-            else
-            {
+            } else {
                 setJwtSecretToken(Math.random() * 99999999 + "");
             }
         }
@@ -103,12 +200,10 @@ const onInit = async function ({options: pluginOptions, session, loggable})
         const serverUrl = convertToUrl(session);
         pluginOptions.url = serverUrl + PAGES.LOGIN_PAGE_NAME;
 
-        loggable.log({lid: 2002, color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
+        loggable.log({lid: "WA2002", color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
 
         return true;
-    }
-    catch (e)
-    {
+    } catch (e) {
         loggable.error({lid: "GS7547"}, e.message);
     }
 
@@ -125,26 +220,28 @@ const onInit = async function ({options: pluginOptions, session, loggable})
  * @param res
  * @param {*} pluginProps
  * @param loggable
- * @returns {{[seen]: boolean}}
+ * @returns {{visitorIp: (*|(function(): AddressInfo)|string), token: string, expiration: string, createdAt: number}|null}
  */
-const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {})
-{
-    try
-    {
+const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {}) {
+    try {
         const {options} = pluginProps || {};
-        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE)
-        {
-            return {};
+
+        // The function was called from a non-request call (GenServe Initialisation time)
+        if (!req) {
+            return null;
         }
 
-        return processSeenStatus(req, res, {loggable});
-    }
-    catch (e)
-    {
+        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE) {
+            return null;
+        }
+
+        const result = setCookieVisitor(req, res, {loggable});
+        return result || null;
+    } catch (e) {
         loggable.error({lid: "WA6553"}, e.message);
     }
 
-    return {};
+    return null;
 };
 
 // ----------------------------------------------------------------
@@ -154,46 +251,42 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = null} = {})
-{
-    try
-    {
+function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}, clientSideData = {}} = {}, {loggable = null} = {}) {
+    try {
         const infoReq = url.parse(req.url, true);
+        headers = req.headers || headers || {};
 
-        for (let k in headers)
-        {
+        for (let k in headers) {
             headers[k] = headers[k] || "";
         }
 
-        for (let k in infoReq)
-        {
+        for (let k in infoReq) {
             infoReq[k] = infoReq[k] || "";
         }
 
-        if (isIgnorePattern(infoReq.pathname))
-        {
+        if (isIgnorePattern(infoReq.pathname)) {
             return;
         }
 
-        if (!isPagePattern(infoReq.pathname))
-        {
+        if (!isPagePattern(infoReq.pathname)) {
             return;
         }
 
         registerHit({
-            ip            : ip,
+            ip: ip,
             acceptLanguage: headers["accept-language"],
-            userAgent     : headers["user-agent"],
-            pathname      : infoReq.pathname,
-            search        : infoReq.search,
-            seen
+            userAgent: headers["user-agent"],
+            pathname: infoReq.pathname,
+            search: infoReq.search,
+            referer: headers["referer"],
+            clientSideData,
+            cookieData,
+            options
         });
 
         return true;
-    }
-    catch (e)
-    {
-        loggable.error({lid: 5441}, e.message);
+    } catch (e) {
+        loggable.error({lid: "WA5441"}, e.message);
     }
 
     return false;
@@ -206,10 +299,8 @@ function trackData(req, res, {headers = {}, ip, seen = false} = {}, {loggable = 
  * - Save session data (in the plugin memory space process)
  * - Review and update stats plugin options
  */
-const setupEngine = function ({session, options}, {loggable = null} = {})
-{
-    try
-    {
+const setupEngine = function ({session, options, action}, {loggable = null} = {}) {
+    try {
         // Save session information in plugin progress
         setSession(session);
 
@@ -220,13 +311,11 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
         const statDir = "/" + server + "." + namespace + "/";
         setOptions(options, {ignore: statDir});
 
-        startLogEngine(server, namespace);
+        startLogEngine(server, namespace, action);
 
         return true;
-    }
-    catch (e)
-    {
-        loggable.error({lid: 2189}, e.message);
+    } catch (e) {
+        loggable.error({lid: "WA2189"}, e.message);
     }
 
     return false;
@@ -243,9 +332,9 @@ const setupEngine = function ({session, options}, {loggable = null} = {})
  * @param data
  * @param extraData
  * @param ip
- * @returns {boolean}
+ * @param {*} options
  */
-function onGenserveMessage({
+async function onGenserveMessage({
                                action,
                                headers,
                                req,
@@ -260,61 +349,90 @@ function onGenserveMessage({
                                genserveName,
                                options,
                                loggable
-                           } = {})
-{
-    try
-    {
+                           } = {}) {
+    try {
         data = data || {};
 
-        if (action === "initialisation")
-        {
+        if (action === "initialisation") {
             setGenserveDir(genserveDir);
 
             // Only the forked process processes this line
-            setupEngine({session, options}, {loggable});
+            setupEngine({action, session, options}, {loggable});
 
             process.send && process.send("initialised");
-        }
-        else if (action === "request")
-        {
-            const {seen} = informingPluginsResult;
+        } else if (action === "request") {
+            // Filter urls
+            if (options.pages) {
+                const pages = options.pages || [];
+                let allowed = false;
+                for (const allowedUrl of pages) {
+                    const regex = new RegExp(allowedUrl, "i");
+                    if (regex.test(req.url)) {
+                        allowed = true;
+                    }
+                }
 
-            trackData(req, res, {headers, ip, data, extraData, seen}, {loggable});
+                if (!allowed) {
+                    return;
+                }
+            }
+
+            // Retrieve cookie value for returning visitors
+            let cookieData;
+            if (options.detectionMethodUnique === "cookie") {
+                cookieData = informingPluginsResult;
+                if (!cookieData) {
+                    getCookieVisitor(req, {loggable});
+                }
+            }
+
+            const clientSideData = await getCookieAnalytics(req, {loggable});
+
+            // @note: Not implemented. For future use
+            const swDetectString = options["service-worker-headers"];
+            let isFromServiceWorker = false;
+            if (swDetectString) {
+                isFromServiceWorker = !!req.headers[swDetectString];
+            }
+
+            trackData(req, res, {
+                headers,
+                ip,
+                data,
+                extraData,
+                cookieData,
+                genserveVersion,
+                genserveName,
+                options,
+                clientSideData,
+                isFromServiceWorker
+            }, {loggable});
         }
-    }
-    catch (e)
-    {
-        loggable.error({lid: 2125}, e.message);
+    } catch (e) {
+        loggable.error({lid: "WA2125"}, e.message);
     }
 
 }
 
 // Do not use console.log
-(async function ()
-{
-    try
-    {
+(async function () {
+    try {
         const argv = minimist(process.argv.slice(2));
-        if (argv.genserveDir)
-        {
+        if (argv.genserveDir) {
             // Set a listener on Genserve events
-            if (argv.genserveVersion && ltr(argv.genserveVersion, "5.6.0"))
-            {
+            if (argv.genserveVersion && ltr(argv.genserveVersion, "5.6.0")) {
                 process.send && process.send("incompatible");
                 await sleep(200);
                 return;
             }
 
-            if (argv.genserveDir)
-            {
+            if (argv.genserveDir) {
                 process.send && process.send("loaded");
                 process.on("message", onGenserveMessage);
                 await sleep(200);
             }
         }
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error(e);
     }
 

@@ -13,6 +13,9 @@ const LIST_DATA_FILES = {
     OS_REFS       : `indexers/oses.json`,
     ENDPOINTS_REFS: `indexers/endpoints.json`,
     LANGUAGES_REF : `indexers/languages.json`,
+    REFERRES_REF : `indexers/referrers.json`,
+    // User token table (Random generated tokens in cookies)
+    TOKENS : `indexers/tokens.json`,
 };
 
 const CHART_DATA_FILES = {
@@ -24,6 +27,7 @@ const CHART_DATA_FILES = {
     BROWSERS_DATA_FILENAME : `charts/browser-popularity.json`,
     OSES_DATA_FILENAME     : `charts/os-popularity.json`,
     LANGUAGES_DATA_FILENAME: `charts/language-popularity.json`,
+    REFERRERS_DATA_FILENAME: `charts/referrers-table.json`,
     ENDPOINTS_DATA_FILENAME: `charts/endpoints-table.json`
 };
 

@@ -1,4 +1,4 @@
-import {SUB_DATA_DIR} from "./constants.mjs";
+import {SUB_DATA_DIR} from "./wa-constants.mjs";
 
 export function generateGenericChart(elem, {
     type = "bar",
@@ -23,7 +23,7 @@ export function generateGenericChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -56,7 +56,7 @@ export function generateGenericPieChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -85,7 +85,7 @@ export function generateBarChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
@@ -119,18 +119,18 @@ export function generatePieChart(elem, {
     }
     catch (e)
     {
-        console.error({lid: 2111}, e.message);
+        console.error({lid: "WA2111"}, e.message);
     }
 
     return null;
 
 }
 
-export function generateDataTables(elem, {data = []} = {})
+export function generateDataTables(elemSelector, {data = []} = {})
 {
     try
     {
-        return new Tabulator("#endpoint-table", {
+        return new Tabulator(elemSelector, {
             height            : 320,
             persistence       : {
                 sort   : true,

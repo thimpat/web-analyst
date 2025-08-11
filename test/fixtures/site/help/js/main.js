@@ -17,14 +17,14 @@ const loadPageIntoDiv = (uri) =>
             })
             .catch(function (e)
             {
-                console.error({lid: 5639}, e.message);
+                console.error({lid: "WA5639"}, e.message);
             });
 
         return true;
     }
     catch (e)
     {
-        console.error({lid: 5641}, e.message);
+        console.error({lid: "WA5641"}, e.message);
     }
 
     return false;
@@ -60,7 +60,7 @@ const init = (currentPage = "pages/1-setup-and-configure-a-server.html") =>
     }
     catch (e)
     {
-        console.error({lid: 6543}, e.message);
+        console.error({lid: "WA6543"}, e.message);
     }
 
     return false;

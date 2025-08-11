@@ -14,10 +14,10 @@
     
         <script src="web-analyst/vendors/tabulator.min.js" type="text/javascript"></script>
     
-        <script src="web-analyst/vendors/chart.js"></script>
+        <script src="web-analyst/vendors/chart-4.5.0.js"></script>
         <script src="web-analyst/vendors/chartjs-plugin-datalabels.js"></script>
     
-        <link href="web-analyst/css/styles.css" rel="stylesheet" />
+        <link href="web-analyst/css/wa-styles.css" rel="stylesheet" />
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -81,7 +81,7 @@
                         <div class="card mb-4 container">
                             <div class="card-header">
                                 ⧠
-                                Visitors per week
+                                Visitors per day
                             </div>
                             <div class="card-body section bar">
                                 <canvas id="visitorsWeek"></canvas>
@@ -93,7 +93,7 @@
                         <div class="card mb-4 container">
                             <div class="card-header">
                                 ⧠
-                                Visitors per year
+                                Visitors per month
                             </div>
                             <div class="card-body section bar">
                                 <canvas id="visitorsYear"></canvas>
@@ -101,6 +101,18 @@
                         </div>
                         <!-- /Block -->
                         
+                        <!-- Block -->
+                        <div class="card mb-4 container">
+                            <div class="card-header">
+                                ⧠
+                                Page views per users
+                            </div>
+                            <div class="card-body section bar">
+                                <canvas id="ViewsUsersGraph"></canvas>
+                            </div>
+                        </div>
+                        <!-- /Block -->
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -148,9 +160,21 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
+                            <div class="card-header">
+                                ⧠
+                                Referrer Frequency
+                            </div>
+                            <div class="card-body section table">
+                                <div id="referrer-table" class="tabulator"></div>
+                            </div>
+                        </div>
+                        <!-- /Block -->
+
+                        <!-- Block -->
+                        <div id="earning-days" class="card mb-4 container">
                             <div class="card-header">
                                 ⧠
                                 Earnings per day
@@ -162,7 +186,7 @@
                         <!-- /Block -->
                         
                         <!-- Block -->
-                        <div class="card mb-4 container">
+                        <div id="earning-months" class="card mb-4 container">
                             <div class="card-header">
                                 ⧠
                                 Earnings per month
@@ -188,6 +212,6 @@
         
         <script src="web-analyst/vendors/bootstrap.min.js" crossorigin="anonymous"></script>
         <script src="web-analyst/vendors/scripts.js"></script>
-        <script src="web-analyst/js/start.mjs" type="module"></script>
+        <script src="web-analyst/js/wa-start.mjs" type="module"></script>
     </body>
 </html>

@@ -18,6 +18,9 @@ npm install web-analyst
 
 <br/>
 
+After each update, it's recommended to delete the folder stats/<namespace>/web-analyst and the html file stats/<namespace>/index.html.
+The folder stats/<namespace>/data should not be removed.
+
 ---
 
 ## 3. Usage
@@ -63,7 +66,9 @@ $> npm install web-analyst
         "some-email@example.com": {
           "password": "secret"
         }
-      }
+      },
+      "detectionMethodUnique": "cookie",
+      "hideEarningCharts": true
     }
   ]
 }
@@ -79,6 +84,8 @@ All values are optional apart from the name
 * users      : Users allowed to the statistic area. Default => user:admin password:admin
 * credentials: Path to a .cjs file containing allowed user list .i.e "/path/to/credentials.cjs" (The above field has 
   precedence over this one) 
+* detectionMethodUnique: Whether to use cookie to calculate unique visitors (more precise)
+* hideEarningCharts: To hide charts related to earnings. You also must edit the HIDE_EARNING_CHARTS set in stats/config.mjs to true
  
 
 <br/>

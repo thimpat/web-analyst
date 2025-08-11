@@ -19,7 +19,7 @@ const loginSession = function (id, {res, expiration = Date.now() + 3600 * 1000, 
     }
     catch (e)
     {
-        loggable.error({lid: 1231}, e.message);
+        loggable.error({lid: "WA1231"}, e.message);
     }
 
     return false;
@@ -62,7 +62,7 @@ const logoutSession = function (req, res, {loggable = null, errorMessage = ""} =
     }
     catch (e)
     {
-        loggable.error({lid: 1233}, e.message);
+        loggable.error({lid: "WA1233"}, e.message);
     }
 
     return false;
@@ -134,7 +134,7 @@ const getSessionInfo = async function (req, {pluginOptions = {}, loggable = null
     }
     catch (e)
     {
-        loggable.error({lid: 1235}, e.message);
+        loggable.error({lid: "WA1235"}, e.message);
     }
 
     return {success: false, message: "Error during session parsing in web-analyst plugin", code: 500};

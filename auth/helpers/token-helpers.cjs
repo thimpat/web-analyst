@@ -31,7 +31,7 @@ const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 *
         let jwtSecretKey = getJwtSecretToken();
         if (!jwtSecretKey)
         {
-            loggable.error({lid: 1001}, `Server error. Could not generate token`);
+            loggable.error({lid: "WA1001"}, `Server error. Could not generate token`);
             return null;
         }
 
@@ -44,7 +44,7 @@ const generateToken = (id, {algorithm = "HS256", expiration = Date.now() + (60 *
     }
     catch (e)
     {
-        loggable.error({lid: 1003}, e.message);
+        loggable.error({lid: "WA1003"}, e.message);
     }
 
     return null;
