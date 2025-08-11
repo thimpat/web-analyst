@@ -14,7 +14,40 @@ const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
-const e = require("chai/chai.js");
+const { promisify } = require("util");
+const zlib = require("zlib");
+const gunzip = promisify(zlib.gunzip);
+const inflate = promisify(zlib.inflate);
+const inflateRaw = promisify(zlib.inflateRaw);
+
+
+// ----------------------------------------------------------------
+// Utility functions
+// ----------------------------------------------------------------
+async function decompressOnServer(compressedBase64, format = "gzip") {
+    const buffer = Buffer.from(compressedBase64, "base64");
+
+    try {
+        let decompressed;
+        switch (format) {
+            case "gzip":
+                decompressed = await gunzip(buffer);
+                break;
+            case "deflate":
+                decompressed = await inflate(buffer);
+                break;
+            case "deflate-raw":
+                decompressed = await inflateRaw(buffer);
+                break;
+            default:
+                throw new Error(`Unsupported format: ${format}`);
+        }
+        return decompressed.toString("utf-8");
+    } catch (error) {
+        console.error("Decompression failed:", error);
+        throw error;
+    }
+}
 
 // ----------------------------------------------------------------
 // Run from Genserve thread
@@ -85,6 +118,39 @@ const getCookieVisitor = function (req, {loggable = null} = {}) {
 
     return null;
 };
+
+/**
+ * Parse the analytics cookie that keeps screen resolution and other data related device
+ * @param req
+ * @param loggable
+ * @returns {Promise<any|undefined>}
+ */
+const getCookieAnalytics = async function (req, {loggable = null} = {}) {
+    try {
+        const cookieString = req.headers.cookie || "";
+        const cookies = cookieString.split(";").map(c => c.trim());
+
+        const analyticsCookie = cookies.find(c => c.startsWith("wa-plus="));
+        if (!analyticsCookie) {
+            return ;
+        }
+
+        const rawValue = analyticsCookie.split("=")[1];
+        if (!rawValue) {
+            return ;
+        }
+
+        try {
+            const originalText = await decompressOnServer(rawValue);
+            const json = JSON.parse(originalText);
+
+            return json;
+        } catch (err) {
+            loggable?.warn?.({ lid: "WA5434" }, "Failed to decompress or parse client Analytics cookie");
+        }
+    } catch (e) {
+        loggable?.error?.({ lid: "WA5435" }, e.message);
+    }};
 
 /**
  * Add extra information to the plugin options.
@@ -185,7 +251,7 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}} = {}, {loggable = null} = {}) {
+function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}, clientSideData = {}} = {}, {loggable = null} = {}) {
     try {
         const infoReq = url.parse(req.url, true);
         headers = req.headers || headers || {};
@@ -213,6 +279,7 @@ function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}}
             pathname: infoReq.pathname,
             search: infoReq.search,
             referer: headers["referer"],
+            clientSideData,
             cookieData,
             options
         });
@@ -267,7 +334,7 @@ const setupEngine = function ({session, options, action}, {loggable = null} = {}
  * @param ip
  * @param {*} options
  */
-function onGenserveMessage({
+async function onGenserveMessage({
                                action,
                                headers,
                                req,
@@ -319,6 +386,8 @@ function onGenserveMessage({
                 }
             }
 
+            const clientSideData = await getCookieAnalytics(req, {loggable});
+
             // @note: Not implemented. For future use
             const swDetectString = options["service-worker-headers"];
             let isFromServiceWorker = false;
@@ -335,6 +404,7 @@ function onGenserveMessage({
                 genserveVersion,
                 genserveName,
                 options,
+                clientSideData,
                 isFromServiceWorker
             }, {loggable});
         }
