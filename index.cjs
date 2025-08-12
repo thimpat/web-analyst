@@ -14,39 +14,46 @@ const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
-const { promisify } = require("util");
-const zlib = require("zlib");
-const gunzip = promisify(zlib.gunzip);
-const inflate = promisify(zlib.inflate);
-const inflateRaw = promisify(zlib.inflateRaw);
-
 
 // ----------------------------------------------------------------
 // Utility functions
 // ----------------------------------------------------------------
-async function decompressOnServer(compressedBase64, format = "gzip") {
-    const buffer = Buffer.from(compressedBase64, "base64");
+function lzwDecode(s) {
+    const data = atob(s);
+    let dict = {};
+    let out = [];
+    let i = 0;
 
-    try {
-        let decompressed;
-        switch (format) {
-            case "gzip":
-                decompressed = await gunzip(buffer);
-                break;
-            case "deflate":
-                decompressed = await inflate(buffer);
-                break;
-            case "deflate-raw":
-                decompressed = await inflateRaw(buffer);
-                break;
-            default:
-                throw new Error(`Unsupported format: ${format}`);
+    // Read the first code (12 bits)
+    let oldCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
+    i += 2;
+    let oldPhrase = String.fromCharCode(oldCode);
+    out.push(oldPhrase);
+
+    let code = 256;
+    let newCode;
+    let newPhrase;
+    let currChar;
+
+    while (i < data.length) {
+        // Read the next code (12 bits)
+        newCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
+        i += 2;
+
+        if (newCode < 256) {
+            newPhrase = String.fromCharCode(newCode);
+        } else {
+            newPhrase = dict[newCode] ? dict[newCode] : (oldPhrase + oldPhrase.charAt(0));
         }
-        return decompressed.toString("utf-8");
-    } catch (error) {
-        console.error("Decompression failed:", error);
-        throw error;
+
+        out.push(newPhrase);
+        currChar = newPhrase.charAt(0);
+        dict[code] = oldPhrase + currChar;
+        code++;
+        oldPhrase = newPhrase;
     }
+
+    return out.join("");
 }
 
 // ----------------------------------------------------------------
@@ -141,7 +148,7 @@ const getCookieAnalytics = async function (req, {loggable = null} = {}) {
         }
 
         try {
-            const originalText = await decompressOnServer(rawValue);
+            const originalText = lzwDecode(rawValue);
             const json = JSON.parse(originalText);
 
             return json;

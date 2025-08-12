@@ -1,119 +1,73 @@
 (async function ()
 {
-    /**
-     * Converts an ArrayBuffer to Base64 string
-     * @param {ArrayBuffer} buffer
-     * @returns {string}
-     */
-    function arrayBufferToBase64(buffer)
-    {
-        let binary = "";
-        const bytes = new Uint8Array(buffer);
-        for (let i = 0; i < bytes.byteLength; i++)
-        {
-            binary += String.fromCharCode(bytes[i]);
+    function lzwEncode(s) {
+        let dict = {};
+        let data = (s + "").split("");
+        let out = [];
+        let currChar;
+        let phrase = data[0];
+        let code = 256;
+        for (let i = 1; i < data.length; i++) {
+            currChar = data[i];
+            if (dict[phrase + currChar] != null) {
+                phrase += currChar;
+            } else {
+                out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+                dict[phrase + currChar] = code;
+                code++;
+                phrase = currChar;
+            }
         }
-        return btoa(binary);
+        out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+
+        // Manually convert the LZW codes into a binary string
+        let encoded = "";
+        for (let i = 0; i < out.length; i++) {
+            // Each code is a 12-bit value
+            encoded += String.fromCharCode(out[i] & 0xFF, out[i] >> 8);
+        }
+        // Remove any padding if necessary
+        encoded = encoded.substr(0, encoded.length - 1);
+
+        return btoa(encoded);
     }
 
-    /**
-     * Converts a Base64 string to ArrayBuffer
-     * @param {string} base64
-     * @returns {ArrayBuffer}
-     */
-    function base64ToArrayBuffer(base64)
-    {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++)
-        {
-            bytes[i] = binaryString.charCodeAt(i);
+    function lzwDecode(s) {
+        const data = atob(s);
+        let dict = {};
+        let out = [];
+        let i = 0;
+
+        // Read the first code (12 bits)
+        let oldCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
+        i += 2;
+        let oldPhrase = String.fromCharCode(oldCode);
+        out.push(oldPhrase);
+
+        let code = 256;
+        let newCode;
+        let newPhrase;
+        let currChar;
+
+        while (i < data.length) {
+            // Read the next code (12 bits)
+            newCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
+            i += 2;
+
+            if (newCode < 256) {
+                newPhrase = String.fromCharCode(newCode);
+            } else {
+                newPhrase = dict[newCode] ? dict[newCode] : (oldPhrase + oldPhrase.charAt(0));
+            }
+
+            out.push(newPhrase);
+            currChar = newPhrase.charAt(0);
+            dict[code] = oldPhrase + currChar;
+            code++;
+            oldPhrase = newPhrase;
         }
-        return bytes.buffer;
-    }
 
-    /**
-     * Simple text compression using Base64 encoding
-     * @param {string} text - Text to compress
-     * @returns {string} - Compressed text
-     */
-    function simpleCompress(text)
-    {
-        // Convert text to Base64
-        const compressed = btoa(encodeURIComponent(text));
-        return compressed;
-    }
-
-    /**
-     * Simple text decompression
-     * @param {string} compressed - Compressed text
-     * @returns {string} - Original text
-     */
-    function simpleDecompress(compressed)
-    {
-        // Convert from Base64 back to original
-        return decodeURIComponent(atob(compressed));
-    }
-
-    /**
-     * Decompresses text that was compressed with compressText()
-     * @param {string} compressedBase64 - Base64-encoded compressed data
-     * @param {string} [encoding='gzip'] - Compression format used ('gzip', 'deflate', or 'deflate-raw')
-     * @returns {Promise<string>} - The decompressed original text
-     */
-    async function decompressText(compressedBase64, encoding = "gzip")
-    {
-        try
-        {
-            // Convert Base64 back to ArrayBuffer
-            const compressedData = base64ToArrayBuffer(compressedBase64);
-
-            // Convert ArrayBuffer to a stream
-            const compressedStream = new Blob([compressedData]).stream();
-
-            // Create decompression stream
-            const decompressionStream = new DecompressionStream(encoding);
-
-            // Pipe through decompression
-            const decompressedStream = compressedStream.pipeThrough(decompressionStream);
-
-            // Read the decompressed stream as text
-            return await new Response(decompressedStream).text();
-        }
-        catch (e)
-        {
-            return simpleDecompress(compressedBase64);
-        }
-    }
-
-    /**
-     * Compresses text using the Compression Streams API
-     * @param {string} text - The text to compress
-     * @param {string} [encoding='gzip'] - Compression format ('gzip', 'deflate', or 'deflate-raw')
-     * @returns {Promise<string>} - Compressed data as a Uint8Array
-     */
-    async function compressText(text, encoding = "gzip")
-    {
-        try
-        {
-            // Convert text to a stream of bytes
-            const textStream = new Blob([text]).stream();
-
-            // Create compression stream
-            const compressionStream = new CompressionStream(encoding);
-
-            // Pipe the text stream through the compression stream
-            const compressedStream = textStream.pipeThrough(compressionStream);
-
-            // Read the compressed stream into a Uint8Array
-            const compressedBlob = await new Response(compressedStream).arrayBuffer();
-
-            return arrayBufferToBase64(compressedBlob);
-        }
-        catch (e)
-        {
-            return simpleCompress(text);
-        }
+        return out.join("");
     }
 
     function generateId()
@@ -151,7 +105,7 @@
         }
         try
         {
-            const decompressed = await decompressText(match[1]);
+            const decompressed = lzwDecode(match[1]);
             return JSON.parse(decompressed);
         }
         catch (err)
@@ -167,12 +121,13 @@
         {
             const existing = await getClientWACookie();
             const merged = {...existing, ...newData};
-            const compressed = await compressText(JSON.stringify(merged));
+            const str = JSON.stringify(merged);
+            const compressed = lzwEncode(str);
             document.cookie = `wa-plus=${compressed}; path=/; max-age=86400`;
         }
-        catch
+        catch(e)
         {
-            console.warn("Failed to compress analytics cookie");
+            console.warn("Failed to compress analytics cookie", e);
         }
     }
 
