@@ -399,15 +399,15 @@ export const getData = async function (endPoint) {
 };
 
 
-export const getPercentages = async function (endPoint, category) {
+export const getPercentages = async function (endPoint, category, filter = []) {
     try {
         const jsonData = await getData(endPoint);
         const data = [];
         const keys = Object.keys(jsonData);
 
-        // First, we collect the resolutions
+        // First, we collect the UID
         for (let key of keys) {
-            const item = jsonData[key];
+             const item = jsonData[key];
             if (!item) {
                 continue;
             }
@@ -424,7 +424,12 @@ export const getPercentages = async function (endPoint, category) {
                 continue;
             }
 
-            data.push(item.extra[category]);
+            const str = item.extra[category];
+            if (filter.includes(str)) {
+                continue;
+            }
+
+            data.push(str);
         }
 
         // Second, we count the references
