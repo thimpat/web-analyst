@@ -3,7 +3,7 @@ import {
     generateDataTables,
     generateGenericChart,
     generatePieChart,
-    getData
+    getData, getPercentages
 } from "./wa-chart-generator.mjs";
 import {CHART_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
 import {CHART_OPTIONS} from "./user-options.mjs";
@@ -318,6 +318,180 @@ export const buildMoneyChart = async function (pathname, {
 };
 
 export const buildPopularityGraph = async function (pathname, {
+    $chart, style1 = {
+        backgroundColor: [
+            "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
+            "rgb(121,152,176)", "rgb(185,168,133)",
+            "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
+            "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
+        ],
+    }, title, subTitle
+})
+{
+    try
+    {
+        const jsonData = await getData(pathname);
+
+        // Build datasets
+        const {labels, percentages} = jsonData;
+        if (!percentages)
+        {
+            console.error(`Missing data visitors`);
+            return;
+        }
+
+        /**F
+         *
+         * @type {*[]}
+         */
+        const datasets = [
+            {
+                label      : "Visits",
+                data       : percentages,
+                hoverOffset: 4,
+                ...style1,
+            }
+        ];
+
+        if (!labels)
+        {
+            console.error(`Missing labels`);
+            return;
+        }
+
+        // Build DOM element
+        const options = {
+            responsive: true,
+            plugins   : {
+                legend    : {
+                    position: "top",
+                },
+                title     : {
+                    display: true,
+                    text   : title
+                },
+                datalabels: {
+                    /**
+                     * https://stackoverflow.com/questions/52044013/chartjs-datalabels-show-percentage-value-in-pie-piece
+                     * @param value
+                     * @param ctx
+                     * @returns {string}
+                     */
+                    formatter: (value) =>
+                    {
+                        return value + "%";
+                    },
+                }
+            }
+        };
+
+        generatePieChart($chart, {
+            title          : subTitle,
+            labels,
+            datasets,
+            options,
+            backgroundColor: "rgb(180,181,217)",
+            borderColor    : "rgb(76,87,134)",
+        });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2437}, e.message);
+    }
+
+    return false;
+};
+
+export const buildPopularityPie = async function (pathname, category, {
+    style1 = {
+        backgroundColor: [
+            "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
+            "rgb(121,152,176)", "rgb(185,168,133)",
+            "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
+            "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
+        ],
+    }, title, subTitle
+})
+{
+    try
+    {
+        const {labels, percentages} = await getPercentages(pathname, category) || {};
+        if (!labels || !percentages)
+        {
+            console.error(`Missing data visitors`);
+            return;
+        }
+
+        const datasets = [
+            {
+                label      : title,
+                data       : percentages,
+                hoverOffset: 4,
+                ...style1,
+            }
+        ];
+
+        // Build DOM element
+        const options = {
+            responsive: true,
+            plugins   : {
+                legend    : {
+                    position: "top",
+                },
+                title     : {
+                    display: true,
+                    text   : title
+                },
+                datalabels: {
+                    /**
+                     * https://stackoverflow.com/questions/52044013/chartjs-datalabels-show-percentage-value-in-pie-piece
+                     * @param value
+                     * @param ctx
+                     * @returns {string}
+                     */
+                    formatter: (value) =>
+                    {
+                        return value + "%";
+                    },
+                }
+            }
+        };
+
+        // Build the DOM element
+        // Get the template and the container
+        const template = document.getElementById("pie-chart-template");
+        const container = document.getElementById("chart-holder");
+
+        const $clone = template.content.cloneNode(true);
+        const $title = $clone.querySelector(".title");
+        $title.textContent = title;
+
+        const $chart = $clone.querySelector("canvas");
+
+        container.appendChild($clone);
+
+        generatePieChart($chart, {
+            title          : subTitle,
+            labels,
+            datasets,
+            options,
+            backgroundColor: "rgb(180,181,217)",
+            borderColor    : "rgb(76,87,134)",
+        });
+
+        return true;
+    }
+    catch (e)
+    {
+        console.error({lid: 2437}, e.message);
+    }
+
+    return false;
+};
+
+export const buildPopularityDeviceType = async function (pathname, {
     $chart, style1 = {
         backgroundColor: [
             "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",

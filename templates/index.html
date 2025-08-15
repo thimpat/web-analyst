@@ -6,17 +6,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-    
+
         <title>Stats</title>
-    
+
         <link href="web-analyst/css/tabulator.min.css" rel="stylesheet">
         <link href="web-analyst/css/web-analyst-stats.css" rel="stylesheet">
-    
+
         <script src="web-analyst/vendors/tabulator.min.js" type="text/javascript"></script>
-    
+
         <script src="web-analyst/vendors/chart-4.5.0.js"></script>
         <script src="web-analyst/vendors/chartjs-plugin-datalabels.js"></script>
-    
+
         <link href="web-analyst/css/wa-styles.css" rel="stylesheet" />
     </head>
     <body class="sb-nav-fixed">
@@ -30,14 +30,14 @@
                 <div class="input-group">
                 </div>
             </form>
-            
+
             <!-- Navbar-->
             <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
                 <li class="nav-item dropdown">
                     <a id="logout" href="/logout-web-analyst.server.cjs">Logout</a>
                 </li>
             </ul>
-            
+
         </nav>
         <div id="layoutSidenav">
             <div id="layoutSidenav_nav">
@@ -59,12 +59,12 @@
             </div>
             <div id="layoutSidenav_content">
                 <main>
-                    <div class="container-fluid px-4">
+                    <div id="chart-holder" class="container-fluid px-4">
                         <h1 class="mt-4">Dashboard</h1>
                         <ol class="breadcrumb mb-4">
                             <li class="breadcrumb-item active">Statistics</li>
                         </ol>
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -76,7 +76,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -88,7 +88,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -100,7 +100,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -124,7 +124,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -136,7 +136,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -148,7 +148,33 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
+                       <!-- Block -->
+                        <template id="pie-chart-template">
+                            <div class="card mb-4 container">
+                                <div class="card-header">
+                                    ⧠
+                                    <span class="title">Screen Resolutions</span>
+                                </div>
+                                <div class="card-body section pie">
+                                    <canvas></canvas>
+                                </div>
+                            </div>
+                        </template>
+                        <!-- /Block -->
+
+                       <!-- Block -->
+                        <div class="card mb-4 container">
+                            <div class="card-header">
+                                ⧠
+                                Device Popularity
+                            </div>
+                            <div class="card-body section pie">
+                                <canvas id="devices"></canvas>
+                            </div>
+                        </div>
+                        <!-- /Block -->
+
                         <!-- Block -->
                         <div class="card mb-4 container">
                             <div class="card-header">
@@ -184,7 +210,7 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
+
                         <!-- Block -->
                         <div id="earning-months" class="card mb-4 container">
                             <div class="card-header">
@@ -196,8 +222,8 @@
                             </div>
                         </div>
                         <!-- /Block -->
-                        
-                        
+
+
                     </div>
                 </main>
                 <footer class="py-4 bg-light mt-auto">
@@ -209,7 +235,7 @@
                 </footer>
             </div>
         </div>
-        
+
         <script src="web-analyst/vendors/bootstrap.min.js" crossorigin="anonymous"></script>
         <script src="web-analyst/vendors/scripts.js"></script>
         <script src="web-analyst/js/wa-start.mjs" type="module"></script>

@@ -180,3 +180,60 @@ export const getData = async function (endPoint)
 };
 
 
+export const getPercentages = async function (endPoint, category) {
+    try {
+        const jsonData = await getData(endPoint);
+        const data = [];
+        const keys = Object.keys(jsonData);
+
+        // First, we collect the resolutions
+        for (let key of keys) {
+            const item = jsonData[key];
+            if (!item) {
+                continue;
+            }
+
+            if (!item.extra) {
+                continue;
+            }
+
+            if (!Object.keys(item.extra).length) {
+                continue;
+            }
+
+            if (!item.extra[category]) {
+                continue;
+            }
+
+            data.push(item.extra[category]);
+        }
+
+        // Second, we count the references
+        const subSections = {};
+        let count = 0;
+        for (let i = 0; i < data.length; i++) {
+            const key = data[i];
+            subSections[key] = subSections[key] || 0;
+            ++subSections[key];
+            ++count;
+        }
+
+        // Then, we calculate the percentages
+        const result = {};
+        for (let key in subSections) {
+            const nbOccurences = subSections[key];
+            const percent = nbOccurences / count * 100;
+            result[key] = percent.toFixed(2);
+        }
+
+        const labels = Object.keys(result);
+        const percentages = Object.values(result);
+
+        return {labels, percentages};
+    }
+    catch (e) {
+        console.error({lid: 2985}, e.message);
+    }
+    return null;
+};
+

@@ -1,6 +1,10 @@
 import {
     buildVisitorGraph,
-    buildPopularityGraph, buildDataTable, buildEarningsGraph, buildViewsUsersGraph
+    buildPopularityGraph,
+    buildDataTable,
+    buildEarningsGraph,
+    buildViewsUsersGraph,
+    buildPopularityPie
 } from "./wa-elt-views.mjs";
 import {CHART_DATA_FILES, LIST_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
 import {CONFIG} from "../../config.mjs";
@@ -56,11 +60,24 @@ const init = async () => {
             title: "Language popularity"
         });
 
+        await buildPopularityPie(LIST_DATA_FILES.TOKENS, "deviceType", {
+            title: "Device Types"
+        });
+
+        await buildPopularityPie(LIST_DATA_FILES.TOKENS, "resolution", {
+            title: "Screen Resolutions"
+        });
+
+        await buildPopularityPie(LIST_DATA_FILES.TOKENS, "timezone", {
+            title: "Timezone"
+        });
+
         // ------------------------------------------------
         // Endpoint frequencies
         // ------------------------------------------------
         await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME, "#endpoint-table");
         await buildDataTable(CHART_DATA_FILES.REFERRERS_DATA_FILENAME, "#referrer-table");
+        await buildDataTable(CHART_DATA_FILES.REFERRERS_DATA_FILENAME, "#preferred-route-table");
 
         // ------------------------------------------------
         // Earnings
