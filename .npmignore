@@ -122,3 +122,6 @@ crashlytics-build.properties
 /templates/
 /tools/npm-version.cjs
 /test/
+
+/tzdata2025b/
+/tzdata2025b.tar.gz
