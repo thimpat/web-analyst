@@ -102,6 +102,7 @@ export function generateGenericMapChartD3(elem, {
         .attr("stdDeviation", 4)
         .attr("result", "coloredBlur");
 
+
     defs.append("filter")
         .attr("id", "glowMerge")
         .html(`
@@ -124,12 +125,50 @@ export function generateGenericMapChartD3(elem, {
 
     const path = d3.geoPath().projection(projection);
 
-    console.log("Values:", datasets.map(v => parseFloat(v)));
-    console.log("Radii:", datasets.map(v => Math.min(parseFloat(v) * scaleFactor, maxRadius)));
+    const controls = d3.select(elem)
+        .append("div")
+        .style("margin", "10px 0");
+
+    controls.append("label")
+        .text("Fixed Radius ")
+        .append("input")
+        .attr("type", "checkbox")
+        .property("checked", options.useFixedRadius)
+        .on("change", function () {
+            options.useFixedRadius = this.checked;
+            generateGenericMapChartD3(elem, { labels, datasets, options });
+        });
+
+    controls.append("label")
+        .text("Enable Glow ")
+        .style("margin-left", "20px")
+        .append("input")
+        .attr("type", "checkbox")
+        .property("checked", options.enableGlow || false)
+        .on("change", function () {
+            options.enableGlow = this.checked;
+            generateGenericMapChartD3(elem, { labels, datasets, options });
+        });
 
     // Load and render world map
     d3.json("web-analyst/json/world.geojson")
         .then(world => {
+
+
+// Boost scale manually
+            const geoPoints = labels
+                .map(label => timeZoneToCoords[label])
+                .filter(coords => coords)
+                .map(([lat, lng]) => ({ type: "Point", coordinates: [lng, lat] }));
+
+            const featureCollection = {
+                type: "FeatureCollection",
+                features: geoPoints.map(pt => ({ type: "Feature", geometry: pt }))
+            };
+
+            projection.fitExtent([[20, 20], [width - 20, height - 20]], featureCollection);
+
+
             svg.append("g")
                 .selectAll("path")
                 .data(world.features)
@@ -154,7 +193,7 @@ export function generateGenericMapChartD3(elem, {
                     ? options.fixedRadius || 6
                     : Math.min(value * scaleFactor, maxRadius);
 
-                svg.append("circle")
+                const circle = svg.append("circle")
                     .attr("cx", x)
                     .attr("cy", y)
                     .attr("r", radius)
@@ -162,9 +201,15 @@ export function generateGenericMapChartD3(elem, {
                     .attr("stroke", "#333")
                     .attr("stroke-width", 0.5)
                     .attr("fill-opacity", 0.8)
-                    .attr("filter", value > d3.max(values) * 0.8 ? "url(#glowMerge)" : null)
+                    .attr("filter", options.enableGlow ? "url(#glowMerge)" : null)
                     .append("title")
                     .text(`${label}: ${value}%`);
+
+                circle.transition()
+                    .duration(800)
+                    .ease(d3.easeElastic)
+                    .attr("r", radius);
+
             });
 
 
