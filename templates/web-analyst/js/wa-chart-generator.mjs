@@ -68,129 +68,181 @@ export function generateGenericPieChart(elem, {
 
 }
 
+function getContinentForLabel(label, continents, timeZoneToCoords) {
+    const coords = timeZoneToCoords[label];
+    if (!coords) return null;
+
+    const point = {
+        type: "Point",
+        coordinates: [coords[1], coords[0]] // [lng, lat]
+    };
+
+    for (const feature of continents.features) {
+        if (d3.geoContains(feature, point)) {
+            return feature.properties.CONTINENT;
+        }
+    }
+
+    return null;
+}
+
 export function generateGenericMapChartD3(elem, {
     labels = [],
     datasets = [],
     options = {
         useFixedRadius: false,
-        fillColor: "#3399ff",
-        borderColor: "#003366",
         fixedRadius: 8,
-        backgroundColor: "#fff",
         scaleFactor: 2,
-        maxRadius: 20
+    maxRadius: 20,
+    backgroundColor: "#f5f5f5",
+    width: 900,
+    height: 500
     }
 }) {
-    const width = options.width || 900;
-    const height = options.height || 500;
-    const scaleFactor = options.scaleFactor || 2;
-    const maxRadius = options.maxRadius || 20;
-    const backgroundColor = options.backgroundColor || "#f5f5f5";
-    const timeZoneToCoords = tz;
+  // Destructure chart dimensions and styling
+            const chartWidth = options.width;
+            const chartHeight = options.height;
+            const backgroundColor = options.backgroundColor;
+            const useFixedRadius = options.useFixedRadius;
+            const fixedRadius = options.fixedRadius;
+            const scaleFactor = options.scaleFactor;
+            const maxRadius = options.maxRadius;
+  const timeZoneToCoords = tz;
 
+  // Clear any existing content
     elem.innerHTML = "";
 
-    // Create responsive SVG container
+  // Create SVG container
     const svg = d3.select(elem)
         .append("svg")
         .attr("width", "100%")
-        .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
         .attr("preserveAspectRatio", "xMidYMid meet")
-        .style("background", backgroundColor);
+      .style("background", backgroundColor);
 
-    // Define color scale based on dataset values
-    const values = datasets.map(v => parseFloat(v)).filter(v => !isNaN(v));
+  // Prepare defs for gradients, filters, etc.
+  const defs = svg.append("defs");
+
+  // Parse numeric values and build color scale
+  const numericValues = datasets
+    .map(v => parseFloat(v))
+    .filter(v => !isNaN(v));
+
     const colorScale = d3.scaleSequential()
-        .domain([d3.min(values), d3.max(values)])
+                .domain([d3.min(numericValues), d3.max(numericValues)])
         .interpolator(d3.interpolateYlOrRd);
 
-    // Optional: define glow filter
-    const defs = svg.append("defs");
-
-    const controls = d3.select(elem)
+  // Add Fixed-Radius toggle
+  const controlsContainer = d3.select(elem)
         .append("div")
         .style("margin", "10px 0");
 
-    controls.append("label")
+  controlsContainer.append("label")
         .text("Fixed Radius ")
         .append("input")
         .attr("type", "checkbox")
-        .property("checked", options.useFixedRadius)
-        .on("change", function () {
+      .property("checked", useFixedRadius)
+      .on("change", function() {
             options.useFixedRadius = this.checked;
             generateGenericMapChartD3(elem, { labels, datasets, options });
         });
 
-    // Load and render world map
-    d3.json("web-analyst/json/world.geojson")
-        .then(world => {
-            const projection = d3.geoMercator();
-            const path = d3.geoPath().projection(projection);
-
-            const geoPoints = labels
-                .map(label => timeZoneToCoords[label])
-                .filter(coords => coords)
-                .map(([lat, lng]) => ({ type: "Point", coordinates: [lng, lat] }));
-
-            const featureCollection = {
-                type: "FeatureCollection",
-                features: geoPoints.map(pt => ({ type: "Feature", geometry: pt }))
+            // Define a hardcoded color map for continents
+            const continentColorMap = {
+                "Africa": "#9bb6bc",      // Blueish
+                "Asia": "#94c8a1",        // Greenish
+                "Europe": "#9e88c6",      // Purple-ish
+                "Oceania": "#d3b797",     // Orange-ish
+                "North America": "#87a8dc",
+                "South America": "#87a8dc",
+                "Antarctica": "#e0e0e0",    // Light gray
             };
 
-            projection.fitExtent([[20, 20], [width - 20, height - 20]], featureCollection);
+  // Load world map and continent shapes in parallel
+    Promise.all([
+        d3.json("web-analyst/json/world.geojson"),
+        d3.json("https://gist.githubusercontent.com/hrbrmstr/91ea5cc9474286c72838/raw/59421ff9b268ff0929b051ddafafbeb94a4c1910/continents.json")
+    ])
+  .then(([worldTopology, continentTopology]) => {
+    // Set up projection and path generator
+                    const projection = d3.geoMercator();
+                    const pathGenerator = d3.geoPath().projection(projection);
 
+    // Build a FeatureCollection of all data points to fit extent
+    const pointFeatures = labels
+      .map(label => timeZoneToCoords[label])
+      .filter(coord => coord)
+      .map(([lat, lng]) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lng, lat] }
+      }));
+
+    projection.fitExtent(
+      [[20, 20], [chartWidth - 20, chartHeight - 20]],
+      { type: "FeatureCollection", features: pointFeatures }
+    );
+
+                    // Draw colored continents using the new color map
             svg.append("g")
                 .selectAll("path")
-                .data(world.features)
+      .data(continentTopology.features)
                 .enter()
                 .append("path")
-                .attr("d", path)
-                .attr("fill", "#e0e0e0")
+        .attr("d", pathGenerator)
+                        .attr("fill", d => continentColorMap[d.properties.CONTINENT] || "#e0e0e0")
                 .attr("stroke", "#999")
                 .attr("stroke-width", 0.5);
 
-            // Plot data points with heatmap styling
-            labels.forEach((label, i) => {
-                const coords = timeZoneToCoords[label];
-                const value = parseFloat(datasets[i]);
-                if (!coords || isNaN(value)) return;
+    // Optionally overlay country borders
+        svg.append("g")
+            .selectAll("path")
+      .data(worldTopology.features)
+            .enter()
+            .append("path")
+        .attr("d", pathGenerator)
+            .attr("fill", "none")
+            .attr("stroke", "#ccc")
+            .attr("stroke-width", 0.3);
 
-                const [lng, lat] = [coords[1], coords[0]];
-                const [x, y] = projection([lng, lat]);
-                const color = colorScale(value);
+    // Draw and animate data circles
+    labels.forEach((label, idx) => {
+                        const coord = timeZoneToCoords[label];
+                        const rawValue = parseFloat(datasets[idx]);
+      if (!coord || isNaN(rawValue)) return;
 
-                const radius = options.useFixedRadius
-                    ? options.fixedRadius || 6
-                    : Math.min(value * scaleFactor, maxRadius);
+                        const [xPos, yPos] = projection([coord[1], coord[0]]);
+                        const fillColor = colorScale(rawValue);
+                        const computedRadius = useFixedRadius
+        ? fixedRadius
+        : Math.min(rawValue * scaleFactor, maxRadius);
 
-                const circle = svg.append("circle")
-                    .attr("cx", x)
-                    .attr("cy", y)
+      const dataCircle = svg.append("circle")
+        .attr("cx", xPos)
+        .attr("cy", yPos)
                     .attr("r", 0)
-                    .attr("fill", color)
+        .attr("fill", fillColor)
                     .attr("stroke", "#333")
                     .attr("stroke-width", 0.5)
                     .attr("fill-opacity", 0.8);
 
-                circle.append("title")
-                    .text(`${label}: ${value}%`);
+      dataCircle.append("title")
+        .text(`${label}: ${rawValue}%`);
 
-                circle.transition()
+      dataCircle.transition()
                     .duration(800)
                     .ease(d3.easeElastic)
-                    .attr("r", radius);
+        .attr("r", computedRadius);
 
-                if (value > d3.max(values) * 0.2) {
-                    pulse(circle, radius);
+      if (rawValue > d3.max(numericValues) * 0.2) {
+        pulse(dataCircle, computedRadius);
                 }
             });
 
-
-            // Add legend
-            const legendWidth = 200;
+    // Build heatmap legend
+    const legendWidth  = 200;
             const legendHeight = 10;
-            const legendSvg = svg.append("g")
-                .attr("transform", `translate(${width - legendWidth - 20}, ${height - 40})`);
+    const legendGroup  = svg.append("g")
+      .attr("transform", `translate(${chartWidth - legendWidth - 20}, ${chartHeight - 40})`);
 
             const legendScale = d3.scaleLinear()
                 .domain(colorScale.domain())
@@ -200,7 +252,7 @@ export function generateGenericMapChartD3(elem, {
                 .ticks(5)
                 .tickFormat(d => `${d}%`);
 
-            const gradientId = "legendGradient";
+    const gradientId = "heatmapLegendGradient";
             defs.append("linearGradient")
                 .attr("id", gradientId)
                 .attr("x1", "0%")
@@ -210,19 +262,22 @@ export function generateGenericMapChartD3(elem, {
                 .enter()
                 .append("stop")
                 .attr("offset", d => `${d * 100}%`)
-                .attr("stop-color", d => colorScale(colorScale.domain()[0] + d * (colorScale.domain()[1] - colorScale.domain()[0])));
+        .attr("stop-color", d => colorScale(
+          colorScale.domain()[0] +
+          d * (colorScale.domain()[1] - colorScale.domain()[0])
+        ));
 
-            legendSvg.append("rect")
+    legendGroup.append("rect")
                 .attr("width", legendWidth)
                 .attr("height", legendHeight)
                 .style("fill", `url(#${gradientId})`);
 
-            legendSvg.append("g")
+    legendGroup.append("g")
                 .attr("transform", `translate(0, ${legendHeight})`)
                 .call(legendAxis);
         })
         .catch(err => {
-            console.error({lid: "WA2113"}, err.message);
+    console.error({ lid: "WA2113" }, err);
         });
 }
 
