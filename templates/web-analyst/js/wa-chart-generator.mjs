@@ -69,7 +69,13 @@ export function generateGenericPieChart(elem, {
 export function generateGenericMapChartD3(elem, {
     labels = [],
     datasets = [],
-    options = {}
+    options = {
+        useFixedRadius: false,
+        fixedRadius: 8,
+        backgroundColor: "#fff",
+        scaleFactor: 0.5,
+        maxRadius: 12
+    }
 }) {
     const width = options.width || 900;
     const height = options.height || 500;
@@ -77,7 +83,7 @@ export function generateGenericMapChartD3(elem, {
     const maxRadius = options.maxRadius || 20;
     const backgroundColor = options.backgroundColor || "#f5f5f5";
 
-    const timeZoneToCoords = tz; // your lat/lng mapping
+    const timeZoneToCoords = tz;
 
     elem.innerHTML = "";
 
@@ -124,8 +130,13 @@ export function generateGenericMapChartD3(elem, {
 
     const path = d3.geoPath().projection(projection);
 
+    console.log("Values:", datasets.map(v => parseFloat(v)));
+    console.log("Radii:", datasets.map(v => Math.min(parseFloat(v) * scaleFactor, maxRadius)));
+
+    debugger;
+
     // Load and render world map
-    d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
+    d3.json("web-analyst/js/world.geojson")
         .then(world => {
             svg.append("g")
                 .selectAll("path")
@@ -141,14 +152,15 @@ export function generateGenericMapChartD3(elem, {
             labels.forEach((label, i) => {
                 const coords = timeZoneToCoords[label];
                 const value = parseFloat(datasets[i]);
-                if (!coords || isNaN(value)) {
-                    return;
-                }
+                if (!coords || isNaN(value)) return;
 
                 const [lng, lat] = [coords[1], coords[0]];
                 const [x, y] = projection([lng, lat]);
-                const radius = Math.min(value * scaleFactor, maxRadius);
                 const color = colorScale(value);
+
+                const radius = options.useFixedRadius
+                    ? options.fixedRadius || 6
+                    : Math.min(value * scaleFactor, maxRadius);
 
                 svg.append("circle")
                     .attr("cx", x)
@@ -162,6 +174,7 @@ export function generateGenericMapChartD3(elem, {
                     .append("title")
                     .text(`${label}: ${value}%`);
             });
+
 
             // Add legend
             const legendWidth = 200;

@@ -78,3 +78,5 @@ dist
 /test/tmp-325598.pack.zip
 /test/running/
 
+/tzdata2025b/
+/tzdata2025b.tar.gz
