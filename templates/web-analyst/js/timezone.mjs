@@ -79,7 +79,15 @@ export const tz = {
         -34.6,
         -58.45
     ],
+    "America/Buenos_Aires": [
+        -34.6,
+        -58.45
+    ],
     "America/Argentina/Cordoba": [
+        -31.4,
+        -64.183333
+    ],
+    "America/Cordoba": [
         -31.4,
         -64.183333
     ],
@@ -87,7 +95,15 @@ export const tz = {
         -24.783333,
         -65.416667
     ],
+    "America/Salta": [
+        -24.783333,
+        -65.416667
+    ],
     "America/Argentina/Jujuy": [
+        -24.183333,
+        -65.3
+    ],
+    "America/Jujuy": [
         -24.183333,
         -65.3
     ],
@@ -95,7 +111,15 @@ export const tz = {
         -26.816667,
         -65.216667
     ],
+    "America/Tucuman": [
+        -26.816667,
+        -65.216667
+    ],
     "America/Argentina/Catamarca": [
+        -28.466667,
+        -65.783333
+    ],
+    "America/Catamarca": [
         -28.466667,
         -65.783333
     ],
@@ -103,7 +127,15 @@ export const tz = {
         -29.433333,
         -66.85
     ],
+    "America/La_Rioja": [
+        -29.433333,
+        -66.85
+    ],
     "America/Argentina/San_Juan": [
+        -31.533333,
+        -68.516667
+    ],
+    "America/San_Juan": [
         -31.533333,
         -68.516667
     ],
@@ -111,7 +143,15 @@ export const tz = {
         -32.883333,
         -68.816667
     ],
+    "America/Mendoza": [
+        -32.883333,
+        -68.816667
+    ],
     "America/Argentina/San_Luis": [
+        -33.316667,
+        -66.35
+    ],
+    "America/San_Luis": [
         -33.316667,
         -66.35
     ],
@@ -119,7 +159,15 @@ export const tz = {
         -51.633333,
         -69.216667
     ],
+    "America/Rio_Gallegos": [
+        -51.633333,
+        -69.216667
+    ],
     "America/Argentina/Ushuaia": [
+        -54.8,
+        -68.3
+    ],
+    "America/Ushuaia": [
         -54.8,
         -68.3
     ],
@@ -1503,7 +1551,15 @@ export const tz = {
         38.254167,
         -85.759444
     ],
+    "America/Louisville": [
+        38.254167,
+        -85.759444
+    ],
     "America/Kentucky/Monticello": [
+        36.829722,
+        -84.849167
+    ],
+    "America/Monticello": [
         36.829722,
         -84.849167
     ],
@@ -1511,7 +1567,15 @@ export const tz = {
         39.768333,
         -86.158056
     ],
+    "America/Indianapolis": [
+        39.768333,
+        -86.158056
+    ],
     "America/Indiana/Vincennes": [
+        38.677222,
+        -87.528611
+    ],
+    "America/Vincennes": [
         38.677222,
         -87.528611
     ],
@@ -1519,7 +1583,15 @@ export const tz = {
         41.051389,
         -86.603056
     ],
+    "America/Winamac": [
+        41.051389,
+        -86.603056
+    ],
     "America/Indiana/Marengo": [
+        38.375556,
+        -86.344722
+    ],
+    "America/Marengo": [
         38.375556,
         -86.344722
     ],
@@ -1527,7 +1599,15 @@ export const tz = {
         38.491944,
         -87.278611
     ],
+    "America/Petersburg": [
+        38.491944,
+        -87.278611
+    ],
     "America/Indiana/Vevay": [
+        38.747778,
+        -85.067222
+    ],
+    "America/Vevay": [
         38.747778,
         -85.067222
     ],
@@ -1539,7 +1619,15 @@ export const tz = {
         37.953056,
         -86.761389
     ],
+    "America/Tell_City": [
+        37.953056,
+        -86.761389
+    ],
     "America/Indiana/Knox": [
+        41.295833,
+        -86.625
+    ],
+    "America/Knox": [
         41.295833,
         -86.625
     ],
@@ -1551,11 +1639,23 @@ export const tz = {
         47.116389,
         -101.299167
     ],
+    "America/Center": [
+        47.116389,
+        -101.299167
+    ],
     "America/North_Dakota/New_Salem": [
         46.845,
         -101.410833
     ],
+    "America/New_Salem": [
+        46.845,
+        -101.410833
+    ],
     "America/North_Dakota/Beulah": [
+        47.264167,
+        -101.777778
+    ],
+    "America/Beulah": [
         47.264167,
         -101.777778
     ],
