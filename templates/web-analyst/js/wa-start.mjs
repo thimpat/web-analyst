@@ -4,7 +4,7 @@ import {
     buildDataTable,
     buildEarningsGraph,
     buildViewsUsersGraph,
-    buildPopularityPie
+    buildPopularityPie, buildPopularityMap
 } from "./wa-elt-views.mjs";
 import {CHART_DATA_FILES, LIST_DATA_FILES, VIEW_TYPE} from "./wa-constants.mjs";
 import {CONFIG} from "../../config.mjs";
@@ -68,7 +68,7 @@ const init = async () => {
             title: "Screen Resolutions"
         });
 
-        await buildPopularityPie(LIST_DATA_FILES.TOKENS, "timezone", {
+        await buildPopularityMap(LIST_DATA_FILES.TOKENS, "timezone", {
             title: "Timezone"
         });
 
@@ -77,7 +77,6 @@ const init = async () => {
         // ------------------------------------------------
         await buildDataTable(CHART_DATA_FILES.ENDPOINTS_DATA_FILENAME, "#endpoint-table");
         await buildDataTable(CHART_DATA_FILES.REFERRERS_DATA_FILENAME, "#referrer-table");
-        await buildDataTable(CHART_DATA_FILES.REFERRERS_DATA_FILENAME, "#preferred-route-table");
 
         // ------------------------------------------------
         // Earnings

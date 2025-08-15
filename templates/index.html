@@ -18,6 +18,8 @@
         <script src="web-analyst/vendors/chartjs-plugin-datalabels.js"></script>
 
         <link href="web-analyst/css/wa-styles.css" rel="stylesheet" />
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -157,22 +159,22 @@
                                     <span class="title">Screen Resolutions</span>
                                 </div>
                                 <div class="card-body section pie">
-                                    <canvas></canvas>
+                                    <canvas class="canvas"></canvas>
                                 </div>
                             </div>
                         </template>
-                        <!-- /Block -->
 
-                       <!-- Block -->
-                        <div class="card mb-4 container">
-                            <div class="card-header">
-                                ⧠
-                                Device Popularity
+                        <template id="map-chart-template">
+                            <div class="card mb-4 container">
+                                <div class="card-header">
+                                    ⧠
+                                    <span class="title">Screen Resolutions</span>
+                                </div>
+                                <div class="card-body section pie">
+                                    <div class="chart"></div>
+                                </div>
                             </div>
-                            <div class="card-body section pie">
-                                <canvas id="devices"></canvas>
-                            </div>
-                        </div>
+                        </template>
                         <!-- /Block -->
 
                         <!-- Block -->

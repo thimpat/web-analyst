@@ -1,7 +1,7 @@
 import {
     generateBarChart,
     generateDataTables,
-    generateGenericChart,
+    generateGenericChart, generateMapChart,
     generatePieChart,
     getData, getPercentages
 } from "./wa-chart-generator.mjs";
@@ -468,7 +468,7 @@ export const buildPopularityPie = async function (pathname, category, {
         const $title = $clone.querySelector(".title");
         $title.textContent = title;
 
-        const $chart = $clone.querySelector("canvas");
+        const $chart = $clone.querySelector("canvas.canvas");
 
         container.appendChild($clone);
 
@@ -491,8 +491,8 @@ export const buildPopularityPie = async function (pathname, category, {
     return false;
 };
 
-export const buildPopularityDeviceType = async function (pathname, {
-    $chart, style1 = {
+export const buildPopularityMap = async function (pathname, category, {
+    style1 = {
         backgroundColor: [
             "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
             "rgb(121,152,176)", "rgb(185,168,133)",
@@ -504,66 +504,30 @@ export const buildPopularityDeviceType = async function (pathname, {
 {
     try
     {
-        const jsonData = await getData(pathname);
-
-        // Build datasets
-        const {labels, percentages} = jsonData;
-        if (!percentages)
+        const {labels, percentages} = await getPercentages(pathname, category) || {};
+        if (!labels || !percentages)
         {
             console.error(`Missing data visitors`);
             return;
         }
 
-        /**F
-         *
-         * @type {*[]}
-         */
-        const datasets = [
-            {
-                label      : "Visits",
-                data       : percentages,
-                hoverOffset: 4,
-                ...style1,
-            }
-        ];
+        // Build the DOM element
+        // Get the template and the container
+        const template = document.getElementById("map-chart-template");
+        const container = document.getElementById("chart-holder");
 
-        if (!labels)
-        {
-            console.error(`Missing labels`);
-            return;
-        }
+        const $clone = template.content.cloneNode(true);
+        const $title = $clone.querySelector(".title");
+        $title.textContent = title;
 
-        // Build DOM element
-        const options = {
-            responsive: true,
-            plugins   : {
-                legend    : {
-                    position: "top",
-                },
-                title     : {
-                    display: true,
-                    text   : title
-                },
-                datalabels: {
-                    /**
-                     * https://stackoverflow.com/questions/52044013/chartjs-datalabels-show-percentage-value-in-pie-piece
-                     * @param value
-                     * @param ctx
-                     * @returns {string}
-                     */
-                    formatter: (value) =>
-                    {
-                        return value + "%";
-                    },
-                }
-            }
-        };
+        const $chart = $clone.querySelector("div.chart");
 
-        generatePieChart($chart, {
+        container.appendChild($clone);
+
+        generateMapChart($chart, {
             title          : subTitle,
             labels,
-            datasets,
-            options,
+            datasets: percentages,
             backgroundColor: "rgb(180,181,217)",
             borderColor    : "rgb(76,87,134)",
         });
