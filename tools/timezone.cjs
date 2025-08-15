@@ -10,14 +10,19 @@ const lines = fs.readFileSync(joinPath(__dirname, "data/zone.tab"), "utf8").spli
 const timeZoneToCoords = {};
 
 function parseLatLng(coordStr) {
-    const match = coordStr.match(/^([+-]\d{2})(\d{2})([+-]\d{3})(\d{2})$/);
-    if (!match) return null;
+    const match = coordStr.match(/^([+-])(\d{2})(\d{2})(\d{2})?([+-])(\d{3})(\d{2})(\d{2})?$/);
+    if (!match) {
+        return null;
+    }
 
-    const [, latDeg, latMin, lngDeg, lngMin] = match;
-    const lat = parseInt(latDeg) + parseInt(latMin) / 60;
-    const lng = parseInt(lngDeg) + parseInt(lngMin) / 60;
-    return [parseFloat(lat.toFixed(4)), parseFloat(lng.toFixed(4))];
+    const [, latSign, latDeg, latMin, latSec = "0", lngSign, lngDeg, lngMin, lngSec = "0"] = match;
+
+    const lat = (parseInt(latDeg) + parseInt(latMin) / 60 + parseInt(latSec) / 3600) * (latSign === "+" ? 1 : -1);
+    const lng = (parseInt(lngDeg) + parseInt(lngMin) / 60 + parseInt(lngSec) / 3600) * (lngSign === "+" ? 1 : -1);
+
+    return [parseFloat(lat.toFixed(6)), parseFloat(lng.toFixed(6))];
 }
+
 
 lines.forEach(line => {
     if (line.startsWith("#") || !line.trim()) {

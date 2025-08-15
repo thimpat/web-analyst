@@ -68,6 +68,9 @@ const init = async () => {
             title: "Screen Resolutions"
         });
 
+        // ------------------------------------------------
+        // Popularity: Timezone
+        // ------------------------------------------------
         await buildPopularityMap(LIST_DATA_FILES.TOKENS, "timezone", {
             title: "Timezone"
         });
