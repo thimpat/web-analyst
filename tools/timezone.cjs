@@ -33,6 +33,10 @@ lines.forEach(line => {
     const latLng = parseLatLng(coords);
     if (latLng) {
         timeZoneToCoords[tz] = latLng;
+        const arr = tz.split("/");
+        if (arr.length > 2) {
+            timeZoneToCoords[arr[0] + "/" + arr[2]] = latLng;
+        }
     }
 });
 
