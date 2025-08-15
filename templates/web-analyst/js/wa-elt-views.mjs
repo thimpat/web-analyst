@@ -492,19 +492,12 @@ export const buildPopularityPie = async function (pathname, category, {
 };
 
 export const buildPopularityMap = async function (pathname, category, {
-    style1 = {
-        backgroundColor: [
-            "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
-            "rgb(121,152,176)", "rgb(185,168,133)",
-            "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
-            "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
-        ],
-    }, title, subTitle
+    title, subTitle
 })
 {
     try
     {
-        const {labels, percentages} = await getPercentages(pathname, category) || {};
+        const {labels, percentages} = await getPercentages(pathname, category, ["UTC", "Etc/Unknown"]) || {};
         if (!labels || !percentages)
         {
             console.error(`Missing data visitors`);
