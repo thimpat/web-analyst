@@ -161,7 +161,7 @@ export function generateGenericMapChartD3(elem, {
   // Load world map and continent shapes in parallel
     Promise.all([
         d3.json("web-analyst/json/world.geojson"),
-        d3.json("https://gist.githubusercontent.com/hrbrmstr/91ea5cc9474286c72838/raw/59421ff9b268ff0929b051ddafafbeb94a4c1910/continents.json")
+        d3.json("web-analyst/json/continents.json")
     ])
   .then(([worldTopology, continentTopology]) => {
     // Set up projection and path generator
