@@ -74,14 +74,11 @@ export function generateGenericMapChartD3(elem, {
     const width = options.width || 900;
     const height = options.height || 500;
     const scaleFactor = options.scaleFactor || 2;
-    const fillColor = options.fillColor || "#3399ff";
-    const borderColor = options.borderColor || "#003366";
-    const fillOpacity = options.fillOpacity || 0.6;
     const maxRadius = options.maxRadius || 20;
+    const backgroundColor = options.backgroundColor || "#f5f5f5";
 
     const timeZoneToCoords = tz; // your lat/lng mapping
 
-    // Clear previous content
     elem.innerHTML = "";
 
     // Create SVG container
@@ -89,7 +86,30 @@ export function generateGenericMapChartD3(elem, {
         .append("svg")
         .attr("width", width)
         .attr("height", height)
-        .style("background", options.backgroundColor || "#f5f5f5");
+        .style("background", backgroundColor);
+
+    // Define color scale based on dataset values
+    const values = datasets.map(v => parseFloat(v)).filter(v => !isNaN(v));
+    const colorScale = d3.scaleSequential()
+        .domain([d3.min(values), d3.max(values)])
+        .interpolator(d3.interpolateYlOrRd);
+
+    // Optional: define glow filter
+    const defs = svg.append("defs");
+    defs.append("filter")
+        .attr("id", "glow")
+        .append("feGaussianBlur")
+        .attr("stdDeviation", 4)
+        .attr("result", "coloredBlur");
+
+    defs.append("filter")
+        .attr("id", "glowMerge")
+        .html(`
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        `);
 
     const longitudes = labels
         .map(label => timeZoneToCoords[label]?.[1])
@@ -102,14 +122,7 @@ export function generateGenericMapChartD3(elem, {
         .scale((width / 2 / Math.PI) * 1.3)
         .translate([width / 2, height / 1.5]);
 
-
     const path = d3.geoPath().projection(projection);
-
-    svg.append("circle")
-        .attr("cx", projection([139.6917, 35.6895])[0]) // Tokyo
-        .attr("cy", projection([139.6917, 35.6895])[1])
-        .attr("r", 4)
-        .attr("fill", "red");
 
     // Load and render world map
     d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
@@ -124,28 +137,66 @@ export function generateGenericMapChartD3(elem, {
                 .attr("stroke", "#999")
                 .attr("stroke-width", 0.5);
 
-            // Plot data points
+            // Plot data points with heatmap styling
             labels.forEach((label, i) => {
                 const coords = timeZoneToCoords[label];
                 const value = parseFloat(datasets[i]);
-
-                if (!coords || isNaN(value)) return;
+                if (!coords || isNaN(value)) {
+                    return;
+                }
 
                 const [lng, lat] = [coords[1], coords[0]];
                 const [x, y] = projection([lng, lat]);
                 const radius = Math.min(value * scaleFactor, maxRadius);
+                const color = colorScale(value);
 
                 svg.append("circle")
                     .attr("cx", x)
                     .attr("cy", y)
                     .attr("r", radius)
-                    .attr("fill", fillColor)
-                    .attr("stroke", borderColor)
-                    .attr("stroke-width", 1)
-                    .attr("fill-opacity", fillOpacity)
+                    .attr("fill", color)
+                    .attr("stroke", "#333")
+                    .attr("stroke-width", 0.5)
+                    .attr("fill-opacity", 0.8)
+                    .attr("filter", value > d3.max(values) * 0.8 ? "url(#glowMerge)" : null)
                     .append("title")
                     .text(`${label}: ${value}%`);
             });
+
+            // Add legend
+            const legendWidth = 200;
+            const legendHeight = 10;
+            const legendSvg = svg.append("g")
+                .attr("transform", `translate(${width - legendWidth - 20}, ${height - 40})`);
+
+            const legendScale = d3.scaleLinear()
+                .domain(colorScale.domain())
+                .range([0, legendWidth]);
+
+            const legendAxis = d3.axisBottom(legendScale)
+                .ticks(5)
+                .tickFormat(d => `${d}%`);
+
+            const gradientId = "legendGradient";
+            defs.append("linearGradient")
+                .attr("id", gradientId)
+                .attr("x1", "0%")
+                .attr("x2", "100%")
+                .selectAll("stop")
+                .data(d3.range(0, 1.01, 0.01))
+                .enter()
+                .append("stop")
+                .attr("offset", d => `${d * 100}%`)
+                .attr("stop-color", d => colorScale(colorScale.domain()[0] + d * (colorScale.domain()[1] - colorScale.domain()[0])));
+
+            legendSvg.append("rect")
+                .attr("width", legendWidth)
+                .attr("height", legendHeight)
+                .style("fill", `url(#${gradientId})`);
+
+            legendSvg.append("g")
+                .attr("transform", `translate(0, ${legendHeight})`)
+                .call(legendAxis);
         })
         .catch(err => {
             console.error({ lid: "WA2113" }, err.message);
