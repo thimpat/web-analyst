@@ -8,10 +8,8 @@ export function generateGenericChart(elem, {
     labels,
     data = [],
     options = {},
-})
-{
-    try
-    {
+}) {
+    try {
         const config = {
             type,
             labels,
@@ -23,9 +21,7 @@ export function generateGenericChart(elem, {
             elem,
             config
         );
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: "WA2111"}, e.message);
     }
 
@@ -37,15 +33,13 @@ export function generateGenericPieChart(elem, {
     labels,
     datasets = [],
     options = {},
-})
-{
-    try
-    {
+}) {
+    try {
         const config = {
             plugins: [ChartDataLabels],
-            type   : "pie",
+            type: "pie",
             labels,
-            data   : {
+            data: {
                 labels,
                 datasets
             },
@@ -56,9 +50,7 @@ export function generateGenericPieChart(elem, {
             elem,
             config
         );
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: "WA2111"}, e.message);
     }
 
@@ -94,7 +86,7 @@ export function generateGenericMapChartD3(elem, {
         .attr("height", height)
         .style("background", backgroundColor);
 
-    // Define color scale based on dataset values
+// Define color scale based on dataset values
     const values = datasets.map(v => parseFloat(v)).filter(v => !isNaN(v));
     const colorScale = d3.scaleSequential()
         .domain([d3.min(values), d3.max(values)])
@@ -130,13 +122,8 @@ export function generateGenericMapChartD3(elem, {
 
     const path = d3.geoPath().projection(projection);
 
-    console.log("Values:", datasets.map(v => parseFloat(v)));
-    console.log("Radii:", datasets.map(v => Math.min(parseFloat(v) * scaleFactor, maxRadius)));
-
-    debugger;
-
     // Load and render world map
-    d3.json("web-analyst/js/world.geojson")
+    d3.json("web-analyst/json/world.geojson")
         .then(world => {
             svg.append("g")
                 .selectAll("path")
@@ -235,9 +222,7 @@ export function generateBarChart(elem, {
             backgroundColor,
             borderColor
         });
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: "WA2111"}, e.message);
     }
 
@@ -256,10 +241,8 @@ export function generatePieChart(elem, {
         "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
     ],
     borderColor = "rgb(76,87,134)",
-} = {})
-{
-    try
-    {
+} = {}) {
+    try {
         return generateGenericPieChart(elem, {
             title,
             datasets,
@@ -269,9 +252,7 @@ export function generatePieChart(elem, {
             backgroundColor,
             borderColor
         });
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: "WA2111"}, e.message);
     }
 
@@ -283,7 +264,7 @@ export function generateMapChart(elem, {
     title = "Map Chart",
     labels,
     datasets = [],
-    options=  {
+    options = {
         scaleFactor: 1200,
         fillColor: "#3399ff",
         borderColor: "#003366"
@@ -294,10 +275,8 @@ export function generateMapChart(elem, {
         "rgb(217,180,194)", "rgb(180,217,217)", "rgb(192,217,180)", "rgb(217,212,180)", "rgb(180,181,217)",
     ],
     borderColor = "rgb(76,87,134)",
-} = {})
-{
-    try
-    {
+} = {}) {
+    try {
         return generateGenericMapChartD3(elem, {
             title,
             datasets,
@@ -306,9 +285,7 @@ export function generateMapChart(elem, {
             backgroundColor,
             borderColor
         });
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: "WA2111"}, e.message);
     }
 
@@ -316,30 +293,26 @@ export function generateMapChart(elem, {
 
 }
 
-export function generateDataTables(elemSelector, {data = []} = {})
-{
-    try
-    {
+export function generateDataTables(elemSelector, {data = []} = {}) {
+    try {
         return new Tabulator(elemSelector, {
-            height            : 320,
-            persistence       : {
-                sort   : true,
+            height: 320,
+            persistence: {
+                sort: true,
                 columns: true,
             },
-            clipboard         : true,
-            columnMinWidth    : 80,
-            movableRows       : true,
-            movableColumns    : true,
-            persistenceID     : "examplePerststance",
-            layout            : "fitDataFill",
+            clipboard: true,
+            columnMinWidth: 80,
+            movableRows: true,
+            movableColumns: true,
+            persistenceID: "examplePerststance",
+            layout: "fitDataFill",
             resizableColumnFit: true,
             data,
-            autoColumns       : true,
-            placeholder       : "Awaiting Data, Please Load File"
+            autoColumns: true,
+            placeholder: "Awaiting Data, Please Load File"
         });
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: 2143}, e.message);
     }
 
@@ -352,17 +325,13 @@ export function generateDataTables(elemSelector, {data = []} = {})
  * @param endPoint
  * @returns {Promise<*>}
  */
-export const getData = async function (endPoint)
-{
+export const getData = async function (endPoint) {
     let result;
-    try
-    {
+    try {
         const url = "./" + SUB_DATA_DIR + "/" + endPoint;
         const response = await fetch(url);
         result = await response.json();
-    }
-    catch (e)
-    {
+    } catch (e) {
         console.error({lid: 2983}, e.message);
     }
 
@@ -420,8 +389,7 @@ export const getPercentages = async function (endPoint, category) {
         const percentages = Object.values(result);
 
         return {labels, percentages};
-    }
-    catch (e) {
+    } catch (e) {
         console.error({lid: 2985}, e.message);
     }
     return null;
