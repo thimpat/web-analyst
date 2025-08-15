@@ -86,19 +86,19 @@ export function generateGenericMapChartD3(elem, {
     const scaleFactor = options.scaleFactor || 2;
     const maxRadius = options.maxRadius || 20;
     const backgroundColor = options.backgroundColor || "#f5f5f5";
-
     const timeZoneToCoords = tz;
 
     elem.innerHTML = "";
 
-    // Create SVG container
+    // Create responsive SVG container
     const svg = d3.select(elem)
         .append("svg")
-        .attr("width", width)
-        .attr("height", height)
+        .attr("width", "100%")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
         .style("background", backgroundColor);
 
-// Define color scale based on dataset values
+    // Define color scale based on dataset values
     const values = datasets.map(v => parseFloat(v)).filter(v => !isNaN(v));
     const colorScale = d3.scaleSequential()
         .domain([d3.min(values), d3.max(values)])
@@ -106,34 +106,6 @@ export function generateGenericMapChartD3(elem, {
 
     // Optional: define glow filter
     const defs = svg.append("defs");
-    defs.append("filter")
-        .attr("id", "glow")
-        .append("feGaussianBlur")
-        .attr("stdDeviation", 6)
-        .attr("result", "coloredBlur");
-
-
-    defs.append("filter")
-        .attr("id", "glowMerge")
-        .html(`
-            <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        `);
-
-    const longitudes = labels
-        .map(label => timeZoneToCoords[label]?.[1])
-        .filter(lng => typeof lng === "number");
-
-    const avgLng = longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
-
-    const projection = d3.geoMercator()
-        .center([avgLng, 0])
-        .scale((width / 2 / Math.PI) * 1.3)
-        .translate([width / 2, height / 1.5]);
-
-    const path = d3.geoPath().projection(projection);
 
     const controls = d3.select(elem)
         .append("div")
@@ -146,37 +118,26 @@ export function generateGenericMapChartD3(elem, {
         .property("checked", options.useFixedRadius)
         .on("change", function () {
             options.useFixedRadius = this.checked;
-            generateGenericMapChartD3(elem, {labels, datasets, options});
+            generateGenericMapChartD3(elem, { labels, datasets, options });
         });
-
-    // controls.append("label")
-    //     .text("Enable Glow ")
-    //     .style("margin-left", "20px")
-    //     .append("input")
-    //     .attr("type", "checkbox")
-    //     .property("checked", options.enableGlow || false)
-    //     .on("change", function () {
-    //         options.enableGlow = this.checked;
-    //         generateGenericMapChartD3(elem, { labels, datasets, options });
-    //     });
 
     // Load and render world map
     d3.json("web-analyst/json/world.geojson")
         .then(world => {
-
+            const projection = d3.geoMercator();
+            const path = d3.geoPath().projection(projection);
 
             const geoPoints = labels
                 .map(label => timeZoneToCoords[label])
                 .filter(coords => coords)
-                .map(([lat, lng]) => ({type: "Point", coordinates: [lng, lat]}));
+                .map(([lat, lng]) => ({ type: "Point", coordinates: [lng, lat] }));
 
             const featureCollection = {
                 type: "FeatureCollection",
-                features: geoPoints.map(pt => ({type: "Feature", geometry: pt}))
+                features: geoPoints.map(pt => ({ type: "Feature", geometry: pt }))
             };
 
             projection.fitExtent([[20, 20], [width - 20, height - 20]], featureCollection);
-
 
             svg.append("g")
                 .selectAll("path")
@@ -202,18 +163,14 @@ export function generateGenericMapChartD3(elem, {
                     ? options.fixedRadius || 6
                     : Math.min(value * scaleFactor, maxRadius);
 
-                const applyGlow = options.enableGlow && value > d3.max(values) * 0.8;
-
                 const circle = svg.append("circle")
                     .attr("cx", x)
                     .attr("cy", y)
-                    .attr("r", radius)
+                    .attr("r", 0)
                     .attr("fill", color)
                     .attr("stroke", "#333")
                     .attr("stroke-width", 0.5)
-                    .attr("fill-opacity", 0.8)
-                    // .attr("filter", applyGlow ? "url(#glowMerge)" : null)
-                    .text(`${label}: ${value}%`);
+                    .attr("fill-opacity", 0.8);
 
                 circle.append("title")
                     .text(`${label}: ${value}%`);
