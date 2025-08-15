@@ -1,7 +1,17 @@
 import {tz} from "./timezone.mjs";
 import {SUB_DATA_DIR} from "./wa-constants.mjs";
-import {generateWorldMapSVG} from "./world-map.mjs";
 
+function pulse(selection, baseRadius) {
+    (function repeat() {
+        selection.transition()
+            .duration(1000)
+            .attr("r", baseRadius * 1.1)
+            .transition()
+            .duration(1000)
+            .attr("r", baseRadius)
+            .on("end", repeat);
+    })();
+}
 
 export function generateGenericChart(elem, {
     type = "bar",
@@ -99,7 +109,7 @@ export function generateGenericMapChartD3(elem, {
     defs.append("filter")
         .attr("id", "glow")
         .append("feGaussianBlur")
-        .attr("stdDeviation", 4)
+        .attr("stdDeviation", 6)
         .attr("result", "coloredBlur");
 
 
@@ -136,34 +146,33 @@ export function generateGenericMapChartD3(elem, {
         .property("checked", options.useFixedRadius)
         .on("change", function () {
             options.useFixedRadius = this.checked;
-            generateGenericMapChartD3(elem, { labels, datasets, options });
+            generateGenericMapChartD3(elem, {labels, datasets, options});
         });
 
-    controls.append("label")
-        .text("Enable Glow ")
-        .style("margin-left", "20px")
-        .append("input")
-        .attr("type", "checkbox")
-        .property("checked", options.enableGlow || false)
-        .on("change", function () {
-            options.enableGlow = this.checked;
-            generateGenericMapChartD3(elem, { labels, datasets, options });
-        });
+    // controls.append("label")
+    //     .text("Enable Glow ")
+    //     .style("margin-left", "20px")
+    //     .append("input")
+    //     .attr("type", "checkbox")
+    //     .property("checked", options.enableGlow || false)
+    //     .on("change", function () {
+    //         options.enableGlow = this.checked;
+    //         generateGenericMapChartD3(elem, { labels, datasets, options });
+    //     });
 
     // Load and render world map
     d3.json("web-analyst/json/world.geojson")
         .then(world => {
 
 
-// Boost scale manually
             const geoPoints = labels
                 .map(label => timeZoneToCoords[label])
                 .filter(coords => coords)
-                .map(([lat, lng]) => ({ type: "Point", coordinates: [lng, lat] }));
+                .map(([lat, lng]) => ({type: "Point", coordinates: [lng, lat]}));
 
             const featureCollection = {
                 type: "FeatureCollection",
-                features: geoPoints.map(pt => ({ type: "Feature", geometry: pt }))
+                features: geoPoints.map(pt => ({type: "Feature", geometry: pt}))
             };
 
             projection.fitExtent([[20, 20], [width - 20, height - 20]], featureCollection);
@@ -193,6 +202,8 @@ export function generateGenericMapChartD3(elem, {
                     ? options.fixedRadius || 6
                     : Math.min(value * scaleFactor, maxRadius);
 
+                const applyGlow = options.enableGlow && value > d3.max(values) * 0.8;
+
                 const circle = svg.append("circle")
                     .attr("cx", x)
                     .attr("cy", y)
@@ -201,8 +212,10 @@ export function generateGenericMapChartD3(elem, {
                     .attr("stroke", "#333")
                     .attr("stroke-width", 0.5)
                     .attr("fill-opacity", 0.8)
-                    .attr("filter", options.enableGlow ? "url(#glowMerge)" : null)
-                    .append("title")
+                    // .attr("filter", applyGlow ? "url(#glowMerge)" : null)
+                    .text(`${label}: ${value}%`);
+
+                circle.append("title")
                     .text(`${label}: ${value}%`);
 
                 circle.transition()
@@ -210,6 +223,9 @@ export function generateGenericMapChartD3(elem, {
                     .ease(d3.easeElastic)
                     .attr("r", radius);
 
+                if (value > d3.max(values) * 0.2) {
+                    pulse(circle, radius);
+                }
             });
 
 
@@ -249,7 +265,7 @@ export function generateGenericMapChartD3(elem, {
                 .call(legendAxis);
         })
         .catch(err => {
-            console.error({ lid: "WA2113" }, err.message);
+            console.error({lid: "WA2113"}, err.message);
         });
 }
 
@@ -260,10 +276,8 @@ export function generateBarChart(elem, {
     options = {},
     backgroundColor = "rgb(180,181,217)",
     borderColor = "rgb(76,87,134)",
-} = {})
-{
-    try
-    {
+} = {}) {
+    try {
         return generateGenericChart(elem, {
             type,
             title,
