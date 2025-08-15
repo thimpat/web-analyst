@@ -63,10 +63,12 @@ export function generateGenericMapChartD3(elem, {
     datasets = [],
     options = {
         useFixedRadius: false,
+        fillColor: "#3399ff",
+        borderColor: "#003366",
         fixedRadius: 8,
         backgroundColor: "#fff",
-        scaleFactor: 0.5,
-        maxRadius: 12
+        scaleFactor: 2,
+        maxRadius: 20
     }
 }) {
     const width = options.width || 900;
@@ -121,6 +123,9 @@ export function generateGenericMapChartD3(elem, {
         .translate([width / 2, height / 1.5]);
 
     const path = d3.geoPath().projection(projection);
+
+    console.log("Values:", datasets.map(v => parseFloat(v)));
+    console.log("Radii:", datasets.map(v => Math.min(parseFloat(v) * scaleFactor, maxRadius)));
 
     // Load and render world map
     d3.json("web-analyst/json/world.geojson")
@@ -264,11 +269,7 @@ export function generateMapChart(elem, {
     title = "Map Chart",
     labels,
     datasets = [],
-    options = {
-        scaleFactor: 1200,
-        fillColor: "#3399ff",
-        borderColor: "#003366"
-    },
+    options = undefined,
     backgroundColor = [
         "rgb(180,181,217)", "rgb(208,180,217)", "rgb(180,217,211)", "rgb(192,217,180)",
         "rgb(217,204,180)", "rgb(217,189,180)", "rgb(217,180,180)", "rgb(217,180,216)",
