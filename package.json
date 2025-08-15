@@ -16,7 +16,9 @@
   "type": "module",
   "scripts": {
     "build:template": "node tools/templator.cjs",
-    "build:all": "npm run build:template && to-esm hybrid/cjs/*.cjs --output web/web-analyst/js && to-esm lib/common.cjs --output ./web/js",
+    "delete:examples": "rimraf ./web/",
+    "build:timezone": "node tools/timezone.cjs",
+    "build:all": "npm run build:template && to-esm hybrid/cjs/*.cjs --output web/web-analyst/js && to-esm lib/common.cjs --output ./web/js && npm run build:timezone",
     "run:stats": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/genserve/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats2": "npm run build:all && npx --yes genserve@latest restart stats.project --dir web --dir C:/projects/web-analyst/my-server.web --port 8080 --dir node_modules/tabulator-tables",
     "run:stats3": "npm run build:all && npx --yes genserve@latest restart --dir web --dir C:/projects/genserve/stats/genserve.projects --port 8080"
