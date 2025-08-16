@@ -11,7 +11,7 @@ const {setSession, getSessionProperty} = require("./lib/utils/session.cjs");
 const {isPagePattern, isIgnorePattern} = require("./lib/utils/patterns.cjs");
 const {setJwtSecretToken} = require("./auth/helpers/token-helpers.cjs");
 const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
-const {DETECTION_METHOD, PAGES} = require("./constants.cjs");
+const {DETECTION_METHOD, PAGES, DATA_GATHERING_METHOD} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
 
@@ -130,21 +130,20 @@ const getCookieVisitor = function (req, {loggable = null} = {}) {
  * Parse the analytics cookie that keeps screen resolution and other data related device
  * @param req
  * @param loggable
- * @returns {Promise<any|undefined>}
  */
-const getCookieAnalytics = async function (req, {loggable = null} = {}) {
+const getCookieAnalytics = function (req, {loggable = null} = {}) {
     try {
         const cookieString = req.headers.cookie || "";
         const cookies = cookieString.split(";").map(c => c.trim());
 
         const analyticsCookie = cookies.find(c => c.startsWith("wa-plus="));
         if (!analyticsCookie) {
-            return ;
+            return;
         }
 
         const rawValue = analyticsCookie.split("=")[1];
         if (!rawValue) {
-            return ;
+            return;
         }
 
         try {
@@ -153,11 +152,37 @@ const getCookieAnalytics = async function (req, {loggable = null} = {}) {
 
             return json;
         } catch (err) {
-            loggable?.warn?.({ lid: "WA5434" }, "Failed to decompress or parse client Analytics cookie");
+            loggable?.warn?.({lid: "WA5434"}, "Failed to decompress or parse client Analytics cookie");
         }
     } catch (e) {
-        loggable?.error?.({ lid: "WA5435" }, e.message);
-    }};
+        loggable?.error?.({lid: "WA5435"}, e.message);
+    }
+};
+
+const getFetchedData = function (postedData, {loggable = null} = {}) {
+    try {
+        try {
+            if (!postedData) {
+                return ;
+            }
+            const encodedData = postedData["wa-stats"];
+            if (!encodedData) {
+                return ;
+            }
+            const originalText = lzwDecode(encodedData);
+            const json = JSON.parse(originalText);
+
+            // FIXME: Check if json.visitor is too big or even valid
+
+            return json;
+        } catch (err) {
+            loggable?.warn?.({lid: "WA5434"}, "Failed to decompress or parse client Analytics cookie");
+        }
+    } catch (e) {
+        loggable?.error?.({lid: "WA5435"}, e.message);
+    }
+
+};
 
 /**
  * Add extra information to the plugin options.
@@ -258,7 +283,13 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
  * Harvest data
  * @returns {Function}
  */
-function trackData(req, res, {headers = {}, ip, cookieData = null, options = {}, clientSideData = {}} = {}, {loggable = null} = {}) {
+function trackData(req, res, {
+    headers = {},
+    ip,
+    cookieData = null,
+    options = {},
+    clientSideData = {}
+} = {}, {loggable = null} = {}) {
     try {
         const infoReq = url.parse(req.url, true);
         headers = req.headers || headers || {};
@@ -342,23 +373,29 @@ const setupEngine = function ({session, options, action}, {loggable = null} = {}
  * @param {*} options
  */
 async function onGenserveMessage({
-                               action,
-                               headers,
-                               req,
-                               res,
-                               data,
-                               extraData,
-                               ip,
-                               informingPluginsResult = {},
-                               session,
-                               genserveDir,
-                               genserveVersion,
-                               genserveName,
-                               options,
-                               loggable
-                           } = {}) {
+                                     action,
+                                     headers,
+                                     req,
+                                     res,
+                                     data,
+                                     postedData,
+                                     extraData,
+                                     ip,
+                                     informingPluginsResult = {},
+                                     session,
+                                     genserveDir,
+                                     genserveVersion,
+                                     genserveName,
+                                     options,
+                                     loggable
+                                 } = {}) {
     try {
         data = data || {};
+
+        // Holds the user unique token ID
+        let cookieData;
+        // Holds various information about devices
+        let clientSideData;
 
         if (action === "initialisation") {
             setGenserveDir(genserveDir);
@@ -368,8 +405,19 @@ async function onGenserveMessage({
 
             process.send && process.send("initialised");
         } else if (action === "request") {
+            // -----------------------------------------------
+            // POST: Fetch /wa-plus
+            // -----------------------------------------------
+            // Check whether the request is an endpoint handled by web-analyst
+            let isEndpoint = false;
+            if (options.gatheringMethod === DATA_GATHERING_METHOD.FETCH &&
+                (options.endpoints && options.endpoints[req.url]) &&
+                (!options.endpoints[req.url].method || options.endpoints[req.url].method === req.method)) {
+                isEndpoint = true;
+            }
+
             // Filter urls
-            if (options.pages) {
+            if (!isEndpoint && options.pages) {
                 const pages = options.pages || [];
                 let allowed = false;
                 for (const allowedUrl of pages) {
@@ -384,16 +432,24 @@ async function onGenserveMessage({
                 }
             }
 
-            // Retrieve cookie value for returning visitors
-            let cookieData;
-            if (options.detectionMethodUnique === "cookie") {
+            if (options.detectionMethodUnique === DETECTION_METHOD.COOKIE || options.gatheringMethod === DATA_GATHERING_METHOD.FETCH) {
                 cookieData = informingPluginsResult;
                 if (!cookieData) {
                     getCookieVisitor(req, {loggable});
                 }
             }
 
-            const clientSideData = await getCookieAnalytics(req, {loggable});
+            if (options.gatheringMethod === "cookie") {
+                clientSideData = getCookieAnalytics(req, {loggable});
+            }
+            else if (options.gatheringMethod === "fetch") {
+                if (isEndpoint && postedData) {
+                    const payload = getFetchedData(postedData, {loggable}) || {};
+                    clientSideData = payload.data;
+                    // Rename this as now visitor token can be stored in cookie or browser storage
+                    cookieData = payload.visitor;
+                }
+            }
 
             // @note: Not implemented. For future use
             const swDetectString = options["service-worker-headers"];
