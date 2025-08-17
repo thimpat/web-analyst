@@ -1,5 +1,4 @@
-(async function ()
-{
+(async function () {
     // Clicks
     const MAX_EVENTS = 200;
 
@@ -75,7 +74,7 @@
                 createdAt: parseInt(createdAt, 10)
             };
         } catch (e) {
-            console.error?.({ lid: "WA5435" }, e.message);
+            console.error?.({lid: "WA5435"}, e.message);
             return null;
         }
     }
@@ -94,7 +93,7 @@
                 createdAt: createdAt ? parseInt(createdAt, 10) : null
             };
         } catch (e) {
-            console.error?.({ lid: "WA5432" }, e.message);
+            console.error?.({lid: "WA5432"}, e.message);
             return null;
         }
     }
@@ -102,30 +101,24 @@
     // -------------------------------------------------
     // Analytics
     // -------------------------------------------------
-    function getDeviceType()
-    {
+    function getDeviceType() {
         const ua = navigator.userAgent;
 
-        if (/CrOS/i.test(ua))
-        {
+        if (/CrOS/i.test(ua)) {
             return "chromebook";
         }
-        if (/iPad|Tablet/i.test(ua))
-        {
+        if (/iPad|Tablet/i.test(ua)) {
             return "tablet";
         }
-        if (/Mobi|Android/i.test(ua))
-        {
+        if (/Mobi|Android/i.test(ua)) {
             return "mobile";
         }
         return "desktop";
     }
 
-    async function updateDuration()
-    {
+    async function updateDuration() {
         const now = Date.now();
-        if (activeStart)
-        {
+        if (activeStart) {
             totalDuration += now - activeStart;
         }
     }
@@ -134,16 +127,11 @@
      * Calculate the duration the app was opened
      * @returns {Promise<void>}
      */
-    async function initialiseDurations()
-    {
-        function handleVisibilityChange()
-        {
-            if (document.visibilityState === "visible")
-            {
+    async function initialiseDurations() {
+        function handleVisibilityChange() {
+            if (document.visibilityState === "visible") {
                 activeStart = Date.now();
-            }
-            else
-            {
+            } else {
                 // Tab is not opened
                 updateDuration();
                 activeStart = null;
@@ -151,8 +139,7 @@
         }
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
-        if (document.visibilityState === "visible")
-        {
+        if (document.visibilityState === "visible") {
             activeStart = Date.now();
         }
     }
@@ -160,8 +147,7 @@
     /**
      * Keep full navigational context
      */
-    function getVisitedPage()
-    {
+    function getVisitedPage() {
         return window.location.pathname + window.location.search + window.location.hash;
     }
 
@@ -189,10 +175,42 @@
         }
     }
 
+    function getLeanSelector(el) {
+        if (el.id) {
+            return `#${el.id}`;
+        }
+
+        const path = [];
+        while (el && el.nodeType === Node.ELEMENT_NODE) {
+            const tag = el.tagName.toLowerCase();
+
+            // Count siblings of same type
+            const siblings = Array.from(el.parentNode.children).filter(
+                sibling => sibling.tagName === el.tagName
+            );
+            const index = siblings.indexOf(el) + 1;
+
+            const selector = `${tag}:nth-of-type(${index})`;
+            path.unshift(selector);
+
+            // Stop early if selector is unique enough
+            const testSelector = path.join(" > ");
+            if (document.querySelectorAll(testSelector).length === 1) break;
+
+            el = el.parentNode;
+        }
+
+        return path.join(" > ");
+    }
+
     function recordClick(event) {
+        const el = event.target;
+
         const entry = {
+            type: "click",
             target: event.target.tagName,              // Element type (e.g., BUTTON, DIV)
             timestamp: new Date().toISOString(),       // ISO format for consistency
+            selector: getLeanSelector(el),
             coordinates: {
                 x: event.clientX,                        // X position relative to viewport
                 y: event.clientY                         // Y position relative to viewport
@@ -216,6 +234,7 @@
 
             const entry = {
                 type: "scroll",
+                selector: getLeanSelector(this),
                 timestamp: new Date().toISOString(),
                 scrollY: currentY
             };
@@ -230,6 +249,10 @@
         return clickAnalytics;
     }
 
+    function fetchRecordedEvents() {
+        return clickAnalytics;
+    }
+
     // -------------------------------------------------
     // endpoint-related
     // -------------------------------------------------
@@ -240,7 +263,7 @@
             setLocalVisitor();
             visitor = getLocalVisitor();
         }
-        
+
         const data = generateDataAnalytics();
         if (!data) {
             return;
@@ -289,12 +312,12 @@
         const serverUrl = "/wa-plus";
 
         try {
-            const str = JSON.stringify({ visitor, data });
+            const str = JSON.stringify({visitor, data});
             const payload = lzwEncode(str);
 
             // The data for sendBeacon needs to be a Blob or a simple string
-            const beaconData = JSON.stringify({ "wa-stats": payload });
-            const blob = new Blob([beaconData], { type: "application/json" });
+            const beaconData = JSON.stringify({"wa-stats": payload});
+            const blob = new Blob([beaconData], {type: "application/json"});
 
             // Use navigator.sendBeacon() for reliable data transmission on page unload
             navigator.sendBeacon(serverUrl, blob);
@@ -303,6 +326,83 @@
             console.error("Error uploading analytics:", error);
         }
     }
+
+
+    // -------------------------------------------------
+    // Replay
+    // -------------------------------------------------
+    function blockUserInteraction() {
+        const blocker = document.createElement("div");
+        blocker.id = "replay-blocker";
+        Object.assign(blocker.style, {
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 9999,
+            pointerEvents: "auto",
+            background: "transparent",
+            cursor: "not-allowed"
+        });
+        document.body.appendChild(blocker);
+    }
+
+    function unblockUserInteraction() {
+        const blocker = document.getElementById("replay-blocker");
+        if (blocker) blocker.remove();
+    }
+
+    function simulateClick(el) {
+        ["mousedown", "mouseup", "click"].forEach(type => {
+            const evt = new MouseEvent(type, {bubbles: true, cancelable: true});
+            el.dispatchEvent(evt);
+        });
+    }
+
+    function replayEvents() {
+        const events = getRecordedEvents();
+        if (!events || events.length === 0) {
+            return;
+        }
+
+        try {
+            blockUserInteraction();
+
+            const sortedEvents = [...events].sort(
+                (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+            );
+            const startTime = new Date(sortedEvents[0].timestamp).getTime();
+
+            sortedEvents.forEach((event, index) => {
+                const delay = new Date(event.timestamp).getTime() - startTime;
+
+                setTimeout(() => {
+                    const el = document.querySelector(event.selector);
+                    if (!el) return;
+
+                    if (event.type === "scroll") {
+                        console.log("Replay scroll event:", event);
+                        el.scrollTo({ top: event.scrollY, behavior: "smooth" });
+                    } else if (event.type === "click") {
+                        console.log("Replay click event:", event);
+                        simulateClick(el);
+                    }
+
+                    // 🏁 Detect last event
+                    if (index === sortedEvents.length - 1) {
+                        console.log("✅ Replay complete");
+                        unblockUserInteraction();
+                    }
+                }, delay);
+            });
+
+        } catch (e) {
+            console.error("Replay failed:", e);
+            unblockUserInteraction();
+        }
+    }
+
 
     async function init() {
 
@@ -317,6 +417,17 @@
             document.addEventListener("click", recordClick);
             document.body.addEventListener("scroll", recordScroll);
         });
+
+        document.addEventListener("keydown", function (event) {
+            const isCtrlR = event.ctrlKey && event.key.toLowerCase() === "p";
+
+            if (isCtrlR) {
+                event.preventDefault(); // Prevent browser refresh
+                console.log("🔁 CTRL + R pressed — starting replay");
+                replayEvents();
+            }
+        });
+
     }
 
     await init();
