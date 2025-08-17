@@ -1,7 +1,18 @@
 (async function ()
 {
+    // Clicks
+    const MAX_EVENTS = 200;
+
+    // Scrolls
+    let lastScrollY = 0;
+    let lastScrollTime = 0;
+    const SCROLL_THRESHOLD = 100; // px
+    const SCROLL_INTERVAL = 500;  // ms
+
+
     let totalDuration = 0;
     let activeStart = null;
+    const clickAnalytics = [];
 
     // -------------------------------------------------
     // Utility
@@ -163,8 +174,60 @@
             language: navigator.language,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             durationMs: totalDuration,
-            visitedPage: getVisitedPage()
+            visitedPage: getVisitedPage(),
+            events: getRecordedEvents()
         };
+    }
+
+    // -------------------------------------------------
+    // advanced-analytics (to detect bots)
+    // -------------------------------------------------
+    function filterAnalytics() {
+        // Maintain max size by removing oldest
+        if (clickAnalytics.length >= MAX_EVENTS) {
+            clickAnalytics.shift();
+        }
+    }
+
+    function recordClick(event) {
+        const entry = {
+            target: event.target.tagName,              // Element type (e.g., BUTTON, DIV)
+            timestamp: new Date().toISOString(),       // ISO format for consistency
+            coordinates: {
+                x: event.clientX,                        // X position relative to viewport
+                y: event.clientY                         // Y position relative to viewport
+            }
+        };
+
+        filterAnalytics();
+
+        clickAnalytics.push(entry);
+    }
+
+    function recordScroll() {
+        const now = Date.now();
+        const currentY = window.scrollY || this.scrollTop;
+
+        if (
+            Math.abs(currentY - lastScrollY) >= SCROLL_THRESHOLD &&
+            now - lastScrollTime >= SCROLL_INTERVAL
+        ) {
+            filterAnalytics();
+
+            const entry = {
+                type: "scroll",
+                timestamp: new Date().toISOString(),
+                scrollY: currentY
+            };
+
+            clickAnalytics.push(entry);
+            lastScrollY = currentY;
+            lastScrollTime = now;
+        }
+    }
+
+    function getRecordedEvents() {
+        return clickAnalytics;
     }
 
     // -------------------------------------------------
@@ -234,24 +297,28 @@
             const blob = new Blob([beaconData], { type: "application/json" });
 
             // Use navigator.sendBeacon() for reliable data transmission on page unload
-            const isQueued = navigator.sendBeacon(serverUrl, blob);
-
-            if (isQueued) {
-                console.log("Analytics data successfully queued with sendBeacon.");
-            } else {
-                console.error("Failed to queue analytics data with sendBeacon.");
-            }
+            navigator.sendBeacon(serverUrl, blob);
 
         } catch (error) {
             console.error("Error uploading analytics:", error);
         }
     }
 
-    await initialiseDurations();
+    async function init() {
 
-    window.addEventListener("beforeunload", () => {
-        updateDuration();
-        uploadAnalyticsEnd();
-    });
+        await initialiseDurations();
+
+        window.addEventListener("beforeunload", () => {
+            updateDuration();
+            uploadAnalyticsEnd();
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.addEventListener("click", recordClick);
+            document.body.addEventListener("scroll", recordScroll);
+        });
+    }
+
+    await init();
 
 })();
