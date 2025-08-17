@@ -405,19 +405,8 @@ async function onGenserveMessage({
 
             process.send && process.send("initialised");
         } else if (action === "request") {
-            // -----------------------------------------------
-            // POST: Fetch /wa-plus
-            // -----------------------------------------------
-            // Check whether the request is an endpoint handled by web-analyst
-            let isEndpoint = false;
-            if (options.gatheringMethod === DATA_GATHERING_METHOD.FETCH &&
-                (options.endpoints && options.endpoints[req.url]) &&
-                (!options.endpoints[req.url].method || options.endpoints[req.url].method === req.method)) {
-                isEndpoint = true;
-            }
-
             // Filter urls
-            if (!isEndpoint && options.pages) {
+            if (options.pages) {
                 const pages = options.pages || [];
                 let allowed = false;
                 for (const allowedUrl of pages) {
@@ -432,6 +421,9 @@ async function onGenserveMessage({
                 }
             }
 
+            // -----------------------------------------------
+            // POST: Fetch /wa-plus
+            // -----------------------------------------------
             if (options.detectionMethodUnique === DETECTION_METHOD.COOKIE || options.gatheringMethod === DATA_GATHERING_METHOD.FETCH) {
                 cookieData = informingPluginsResult;
                 if (!cookieData) {
@@ -443,6 +435,11 @@ async function onGenserveMessage({
                 clientSideData = getCookieAnalytics(req, {loggable});
             }
             else if (options.gatheringMethod === "fetch") {
+                // Check whether the request is an endpoint handled by web-analyst
+                let isEndpoint = (options.gatheringMethod === DATA_GATHERING_METHOD.FETCH &&
+                    (options.endpoints && options.endpoints[req.url]) &&
+                    (!options.endpoints[req.url].method || options.endpoints[req.url].method === req.method));
+
                 if (isEndpoint && postedData) {
                     const payload = getFetchedData(postedData, {loggable}) || {};
                     clientSideData = payload.data;
