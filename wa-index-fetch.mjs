@@ -1,6 +1,7 @@
 (async function ()
 {
     let totalDuration = 0;
+    let activeStart = null;
 
     // -------------------------------------------------
     // Utility
@@ -90,13 +91,6 @@
     // -------------------------------------------------
     // Analytics
     // -------------------------------------------------
-    function generateId()
-    {
-        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        );
-    }
-
     function getDeviceType()
     {
         const ua = navigator.userAgent;
@@ -116,26 +110,21 @@
         return "desktop";
     }
 
+    async function updateDuration()
+    {
+        const now = Date.now();
+        if (activeStart)
+        {
+            totalDuration += now - activeStart;
+        }
+    }
+
     /**
      * Calculate the duration the app was opened
      * @returns {Promise<void>}
      */
     async function initialiseDurations()
     {
-        let activeStart = null;
-
-        async function updateDuration()
-        {
-            const now = Date.now();
-            if (activeStart)
-            {
-                totalDuration += now - activeStart;
-                activeStart = null;
-            }
-
-            console.log("totalDuration = " + totalDuration);
-        }
-
         function handleVisibilityChange()
         {
             if (document.visibilityState === "visible")
@@ -146,12 +135,11 @@
             {
                 // Tab is not opened
                 updateDuration();
+                activeStart = null;
             }
         }
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
-        window.addEventListener("beforeunload", updateDuration);
-
         if (document.visibilityState === "visible")
         {
             activeStart = Date.now();
@@ -260,13 +248,9 @@
     }
 
     await initialiseDurations();
-    await uploadAnalytics();
-
-    setTimeout(function () {
-        uploadAnalyticsEnd();
-    }, 2000);
 
     window.addEventListener("beforeunload", () => {
+        updateDuration();
         uploadAnalyticsEnd();
     });
 
