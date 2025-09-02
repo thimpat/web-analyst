@@ -5,48 +5,90 @@
     // Scrolls
     let lastScrollY = 0;
     let lastScrollTime = 0;
-    const SCROLL_THRESHOLD = 100; // px
-    const SCROLL_INTERVAL = 500;  // ms
-
+    const SCROLL_THRESHOLD = 100;
+    const SCROLL_INTERVAL = 500;
 
     let totalDuration = 0;
     let activeStart = null;
     const clickAnalytics = [];
 
+    let forcePort = document.location.port === "8010" ? "8092" : document.location.port;
+    const protocol = document.location.protocol;
+    const baseUrl = document.location.hostname;
+    let serverPath = "/wa-plus";
+    let serverUrl = serverPath;
+    if (forcePort) {
+        const urlObj = new URL(`${serverPath}`, `${protocol}//${baseUrl}:${forcePort}`);
+        serverUrl = urlObj.toString();
+    }
+
+    console.log("wa version 1.05");
+
     // -------------------------------------------------
     // Utility
     // -------------------------------------------------
-    function lzwEncode(s) {
-        let dict = {};
-        let data = (s + "").split("");
-        let out = [];
-        let currChar;
-        let phrase = data[0];
-        let code = 256;
-        for (let i = 1; i < data.length; i++) {
-            currChar = data[i];
-            if (dict[phrase + currChar] != null) {
-                phrase += currChar;
+    function lzwEncode(str) {
+        if (!str) {
+            return str;
+        }
+        const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        const d = new Map();
+        str=unescape(encodeURIComponent(str)).split("");
+        let word = str[0];
+        let num = 256;
+        let key;
+        const o = [];
+
+        function out(word,num) {
+            key=word.length>1 ? d.get(word) : word.charCodeAt(0);
+            o.push(b64[key&0x3f]);
+            o.push(b64[(key>>6)&0x3f]);
+            o.push(b64[(key>>12)&0x3f]);
+        }
+        for (let i=1; i<str.length; i++) {
+            const c = str[i];
+            if (d.has(word+c)) {
+                word+=c;
             } else {
-                out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
-                dict[phrase + currChar] = code;
-                code++;
-                phrase = currChar;
+                d.set(word+c,num++);
+                out(word,num);
+                word=c;
+                if(num==(1<<18)-1) {
+                    d.clear();
+                    num=256;
+                }
             }
         }
-        out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
-
-        // Manually convert the LZW codes into a binary string
-        let encoded = "";
-        for (let i = 0; i < out.length; i++) {
-            // Each code is a 12-bit value
-            encoded += String.fromCharCode(out[i] & 0xFF, out[i] >> 8);
-        }
-        // Remove any padding if necessary
-        encoded = encoded.substr(0, encoded.length - 1);
-
-        return btoa(encoded);
+        out(word);
+        return o.join("");
     }
+
+    function lzwDecode(s) {
+        let i;
+        const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        const b64d = {};
+        for(i = 0; i<64; i++){
+            b64d[b64.charAt(i)]=i;
+        }
+        const d = new Map();
+        let num = 256;
+        let word = String.fromCharCode(b64d[s[0]] + (b64d[s[1]] << 6) + (b64d[s[2]] << 12));
+        let prev = word;
+        const o = [word];
+        for(i = 3; i<s.length; i+=3) {
+            const key = b64d[s[i]] + (b64d[s[i + 1]] << 6) + (b64d[s[i + 2]] << 12);
+            word=key<256 ? String.fromCharCode(key) : d.has(key) ? d.get(key) : word+word.charAt(0);
+            o.push(word);
+            d.set(num++, prev+word.charAt(0));
+            prev=word;
+            if(num==(1<<18)-1) {
+                d.clear();
+                num=256;
+            }
+        }
+        return decodeURIComponent(escape(o.join("")));
+    }
+
 
     // -------------------------------------------------
     // ID
@@ -256,8 +298,11 @@
     // -------------------------------------------------
     // endpoint-related
     // -------------------------------------------------
-    async function uploadAnalytics() {
-
+    /**
+     * @obsolete
+     * @returns {Promise<void>}
+     */
+    async function uploadAnalytics(usedTechnics) {
         let visitor = getLocalVisitor();
         if (!visitor) {
             setLocalVisitor();
@@ -269,140 +314,50 @@
             return;
         }
 
-        const serverUrl = "/wa-plus";
-
         try {
 
             const str = JSON.stringify({visitor, data});
             const payload = lzwEncode(str);
 
-            const response = await fetch(serverUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({"wa-stats": payload}),
-            });
-
-            if (!response.ok) {
-                // Check for a successful response (status code 200-299)
-                console.error(`HTTP error! status: ${response.status}`);
+            if (!lzwDecode(payload)) {
+                // Don't send invalid data
+                console.error(`Data decoding error`);
+                return;
             }
 
-            const result = await response.json();
+            if (usedTechnics === "beacon") {
+                // The data for sendBeacon needs to be a Blob or a simple string
+                const beaconData = JSON.stringify({"wa-stats": payload});
+                const blob = new Blob([beaconData], {type: "application/json"});
 
-            console.log("Success:", result);
-        } catch (error) {
-            console.error("Error uploading analytics:", error);
-        }
-    }
+                // Use navigator.sendBeacon() for reliable data transmission on page unload
+                navigator.sendBeacon(serverUrl, blob);
+            }
+            else {
+                const response = await fetch(serverUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({"wa-stats": payload}),
+                });
 
-    function uploadAnalyticsEnd() {
-        let visitor = getLocalVisitor();
-        if (!visitor) {
-            setLocalVisitor();
-            visitor = getLocalVisitor();
-        }
+                if (!response.ok) {
+                    console.error(`HTTP error! status: ${response.status}`);
+                }
 
-        const data = generateDataAnalytics();
-        if (!data) {
-            return;
-        }
-
-        const serverUrl = "/wa-plus";
-
-        try {
-            const str = JSON.stringify({visitor, data});
-            const payload = lzwEncode(str);
-
-            // The data for sendBeacon needs to be a Blob or a simple string
-            const beaconData = JSON.stringify({"wa-stats": payload});
-            const blob = new Blob([beaconData], {type: "application/json"});
-
-            // Use navigator.sendBeacon() for reliable data transmission on page unload
-            navigator.sendBeacon(serverUrl, blob);
+                const result = await response.json();
+                if (!result.success) {
+                    console.error("Error processing data");
+                    return ;
+                }
+                data.events = [data.events];
+            }
 
         } catch (error) {
-            console.error("Error uploading analytics:", error);
+            console.error("Error uploading data:", error);
         }
     }
-
-
-    // -------------------------------------------------
-    // Replay
-    // -------------------------------------------------
-    function blockUserInteraction() {
-        const blocker = document.createElement("div");
-        blocker.id = "replay-blocker";
-        Object.assign(blocker.style, {
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 9999,
-            pointerEvents: "auto",
-            background: "transparent",
-            cursor: "not-allowed"
-        });
-        document.body.appendChild(blocker);
-    }
-
-    function unblockUserInteraction() {
-        const blocker = document.getElementById("replay-blocker");
-        if (blocker) blocker.remove();
-    }
-
-    function simulateClick(el) {
-        ["mousedown", "mouseup", "click"].forEach(type => {
-            const evt = new MouseEvent(type, {bubbles: true, cancelable: true});
-            el.dispatchEvent(evt);
-        });
-    }
-
-    function replayEvents() {
-        const events = getRecordedEvents();
-        if (!events || events.length === 0) {
-            return;
-        }
-
-        try {
-            blockUserInteraction();
-
-            const sortedEvents = [...events].sort(
-                (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-            );
-            const startTime = new Date(sortedEvents[0].timestamp).getTime();
-
-            sortedEvents.forEach((event, index) => {
-                const delay = new Date(event.timestamp).getTime() - startTime;
-
-                setTimeout(() => {
-                    const el = document.querySelector(event.selector);
-                    if (!el) return;
-
-                    if (event.type === "scroll") {
-                        console.log("Replay scroll event:", event);
-                        el.scrollTo({ top: event.scrollY, behavior: "smooth" });
-                    } else if (event.type === "click") {
-                        console.log("Replay click event:", event);
-                        simulateClick(el);
-                    }
-
-                    // 🏁 Detect last event
-                    if (index === sortedEvents.length - 1) {
-                        console.log("✅ Replay complete");
-                        unblockUserInteraction();
-                    }
-                }, delay);
-            });
-
-        } catch (e) {
-            console.error("Replay failed:", e);
-            unblockUserInteraction();
-        }
-    }
-
 
     async function init() {
 
@@ -410,7 +365,7 @@
 
         window.addEventListener("beforeunload", () => {
             updateDuration();
-            uploadAnalyticsEnd();
+            uploadAnalytics("beacon");
         });
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -418,16 +373,9 @@
             document.body.addEventListener("scroll", recordScroll);
         });
 
-        document.addEventListener("keydown", function (event) {
-            const isCtrlR = event.ctrlKey && event.key.toLowerCase() === "p";
-
-            if (isCtrlR) {
-                event.preventDefault(); // Prevent browser refresh
-                console.log("🔁 CTRL + R pressed — starting replay");
-                replayEvents();
-            }
+        document.addEventListener("dblclick", () => {
+            uploadAnalytics("fetch");
         });
-
     }
 
     await init();
