@@ -15,6 +15,9 @@ const {DETECTION_METHOD, PAGES, DATA_GATHERING_METHOD} = require("./constants.cj
 const {ltr} = require("semver");
 const crypto = require("crypto");
 const {getRegisteredTokens} = require("./lib/builders/indexers/map-ips.cjs");
+const {getRegisteredBehaviors} = require("./lib/builders/indexers/map-behaviors.cjs");
+const {buildStatsDirectory} = require("./lib/utils/core.cjs");
+const threadID = Math.floor(Math.random() * 10000);
 
 // ----------------------------------------------------------------
 // Utility functions
@@ -200,6 +203,7 @@ const decodeFetchedData = function (postedData, {loggable = null} = {}) {
  */
 const onInit = async function ({options: pluginOptions, session, loggable}) {
     try {
+
         let dir = pluginOptions.staticDirs || pluginOptions.dir || ["./stats/"];
         if (!Array.isArray(dir)) {
             dir = [dir];
@@ -235,6 +239,8 @@ const onInit = async function ({options: pluginOptions, session, loggable}) {
         pluginOptions.url = serverUrl + PAGES.LOGIN_PAGE_NAME;
 
         loggable.log({lid: "WA2002", color: "#4158b7"}, `Statistics plugin URL: ${pluginOptions.url}`);
+
+        setupSession(session, pluginOptions, threadID);
 
         return true;
     } catch (e) {
@@ -279,6 +285,20 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
             result = setCookieVisitor(req, res, {loggable});
         }
 
+        if (req.method === "OPTIONS") {
+            return {
+                statusCode: 204,
+                processed: true,
+                allow: "GET, POST, OPTIONS",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
+                result
+            };
+        }
+
         // wa-plus is the endpoint that will receive users' hits.
         // We acknowledge GenServe that we handle this endpoint
         // so we answer as quick as possible as we don't want to block GenServe main thread.
@@ -303,33 +323,51 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
                     result
 
                 };
-            } else if (req.method === "OPTIONS") {
-                return {
-                    statusCode: 204,
-                    processed: true,
-                    allow: "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Credentials": "true",
-                    "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
-                    result
-                };
             }
         }
 
         // wa-replay is the endpoint that will return the way the user navigated the website.
         // wa-replay cannot be handle in onGenserveMessage as the function doesn't send back any feedback to GenServe.
-        if (req.url === "/wa-replay" && req.method === "GET") {
-            const tokens = getRegisteredTokens();
+        if (req.url.startsWith("/wa-replay") && req.method === "GET") {
+            // Use url.parse() to parse the URL and get the query object
+            const parsedUrl = url.parse(req.url, true);
+
+            // The parsedUrl.query property is an object containing all query parameters
+            const query = parsedUrl.query || {};
+            const {tokenStatID} = query;
+
+            // console.log("Query parameters:", query);
+            const tokens = getRegisteredBehaviors();
+            if (tokenStatID) {
+                return {
+                    statusCode: 200,
+                    contentType: "application/json; charset=utf-8",
+                    response: {
+                        success: true,
+                        content: tokens[tokenStatID]
+                    },
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
+                    processed: true,
+                    result
+                };
+             }
+
             return {
                 statusCode: 200,
                 contentType: "application/json; charset=utf-8",
                 response: {
                     success: true,
-                    message: "All good now",
-                    content: tokens
+                    content: Object.keys(tokens)
                 },
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
                 processed: true,
                 result
             };
@@ -397,6 +435,29 @@ function trackData(req, res, {
     return false;
 }
 
+/**
+ * We must call this function from the GenServe thread and the WebAnalyst thread
+ * @param session
+ * @param options
+ * @param threadID
+ * @returns {{server: (*), namespace: (*)}}
+ */
+function setupSession(session, options, threadID) {
+    // Save GenServe session information in plugin progress
+    setSession(session);
+
+    const server = getSessionProperty("serverName");
+    const namespace = getSessionProperty("namespace");
+
+    // By default, we ignore the stats page
+    const statDir = "/" + server + "." + namespace + "/";
+    setOptions(options, {ignore: statDir, threadID});
+
+    // Create directory for server
+    buildStatsDirectory(server, namespace);
+
+    return {server, namespace};
+}
 
 /**
  * - Generate HTML web pages for statistic pages
@@ -406,15 +467,7 @@ function trackData(req, res, {
  */
 const setupEngine = function ({session, options, action}, {loggable = null} = {}) {
     try {
-        // Save session information in plugin progress
-        setSession(session);
-
-        const server = getSessionProperty("serverName");
-        const namespace = getSessionProperty("namespace");
-
-        // By default, we ignore the stats page
-        const statDir = "/" + server + "." + namespace + "/";
-        setOptions(options, {ignore: statDir});
+        const {server, namespace} = setupSession(session, options, threadID);
 
         startLogEngine(server, namespace, action);
 
