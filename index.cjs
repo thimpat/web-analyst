@@ -14,8 +14,7 @@ const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES, DATA_GATHERING_METHOD} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
-const {getRegisteredTokens} = require("./lib/builders/indexers/map-ips.cjs");
-const {getRegisteredBehaviors} = require("./lib/builders/indexers/map-behaviors.cjs");
+const {getRegisteredBehaviors, getSortedLastN} = require("./lib/builders/indexers/map-behaviors.cjs");
 const {buildStatsDirectory} = require("./lib/utils/core.cjs");
 const threadID = Math.floor(Math.random() * 10000);
 
@@ -361,7 +360,7 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
                 contentType: "application/json; charset=utf-8",
                 response: {
                     success: true,
-                    content: Object.keys(tokens)
+                    content: getSortedLastN(tokens)
                 },
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type",
