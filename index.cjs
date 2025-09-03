@@ -14,50 +14,39 @@ const {setGenserveDir} = require("./auth/helpers/genserve-helpers.cjs");
 const {DETECTION_METHOD, PAGES, DATA_GATHERING_METHOD} = require("./constants.cjs");
 const {ltr} = require("semver");
 const crypto = require("crypto");
+const {getRegisteredTokens} = require("./lib/builders/indexers/map-ips.cjs");
 
 // ----------------------------------------------------------------
 // Utility functions
 // ----------------------------------------------------------------
 function lzwDecode(s) {
-    const data = atob(s);
-    let dict = {};
-    let out = [];
-    let i = 0;
-
-    // Read the first code (12 bits)
-    let oldCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
-    i += 2;
-    let oldPhrase = String.fromCharCode(oldCode);
-    out.push(oldPhrase);
-
-    let code = 256;
-    let newCode;
-    let newPhrase;
-    let currChar;
-
-    while (i < data.length) {
-        // Read the next code (12 bits)
-        newCode = data.charCodeAt(i) | (data.charCodeAt(i + 1) << 8);
-        i += 2;
-
-        if (newCode < 256) {
-            newPhrase = String.fromCharCode(newCode);
-        } else {
-            newPhrase = dict[newCode] ? dict[newCode] : (oldPhrase + oldPhrase.charAt(0));
-        }
-
-        out.push(newPhrase);
-        currChar = newPhrase.charAt(0);
-        dict[code] = oldPhrase + currChar;
-        code++;
-        oldPhrase = newPhrase;
+    let i;
+    const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const b64d = {};
+    for (i = 0; i < 64; i++) {
+        b64d[b64.charAt(i)] = i;
     }
-
-    return out.join("");
+    const d = new Map();
+    let num = 256;
+    let word = String.fromCharCode(b64d[s[0]] + (b64d[s[1]] << 6) + (b64d[s[2]] << 12));
+    let prev = word;
+    const o = [word];
+    for (i = 3; i < s.length; i += 3) {
+        const key = b64d[s[i]] + (b64d[s[i + 1]] << 6) + (b64d[s[i + 2]] << 12);
+        word = key < 256 ? String.fromCharCode(key) : d.has(key) ? d.get(key) : word + word.charAt(0);
+        o.push(word);
+        d.set(num++, prev + word.charAt(0));
+        prev = word;
+        if (num == (1 << 18) - 1) {
+            d.clear();
+            num = 256;
+        }
+    }
+    return decodeURIComponent(escape(o.join("")));
 }
 
 // ----------------------------------------------------------------
-// Run from Genserve thread
+// Run from GenServe thread
 // ----------------------------------------------------------------
 /**
  * Sets a cookie with a unique token if the visitor is new, and returns token + IP
@@ -159,15 +148,27 @@ const getCookieAnalytics = function (req, {loggable = null} = {}) {
     }
 };
 
-const getFetchedData = function (postedData, {loggable = null} = {}) {
+/**
+ * Decode the json sent by the beacon.
+ * @note Max size for a beacon is 64k
+ * @param postedData
+ * @param loggable
+ * @returns {any|null}
+ */
+const decodeFetchedData = function (postedData, {loggable = null} = {}) {
     try {
         try {
             if (!postedData) {
-                return ;
+                return null;
             }
-            const encodedData = postedData["wa-stats"];
+
+            let encodedData = postedData["wa-stats"];
             if (!encodedData) {
-                return ;
+                if (!postedData.startsWith("wa-stats=")) {
+                    return null;
+                }
+
+                encodedData = postedData.split("=")[1];
             }
             const originalText = lzwDecode(encodedData);
             const json = JSON.parse(originalText);
@@ -182,6 +183,7 @@ const getFetchedData = function (postedData, {loggable = null} = {}) {
         loggable?.error?.({lid: "WA5435"}, e.message);
     }
 
+    return null;
 };
 
 /**
@@ -244,17 +246,26 @@ const onInit = async function ({options: pluginOptions, session, loggable}) {
 
 /**
  * Each time a request is done, this function is called.
- * This function is run from inside GenServe thread and is called before Genserve reaches out
+ * This function is run from inside GenServe thread and is called before GenServe reaches out
  * the plugin within its own thread.
- * The value returned by this function will be sent to the plugin process via onGenserveMessage
+ * The value returned by this function will be sent to the plugin process via onGenserveMessage.
+ * ---
+ * @note This call should be done as quick as possible as it would block GenServe main thread.
+ * Only put here light operations (i.e. setting a cookie) where the client needs to handle a specific response from the plugin.
+ * Web-Analyst main-thread doesn't communicate with GenServe, so GenServe is unaware of what the plugin is doing apart from here.
  * @see onGenserveMessage
  * @param req
  * @param res
  * @param {*} pluginProps
+ * @param details
  * @param loggable
  * @returns {{visitorIp: (*|(function(): AddressInfo)|string), token: string, expiration: string, createdAt: number}|null}
+ * When null, it means GenServe can handle the endpoint
  */
-const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {loggable = null} = {}) {
+const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUnique: DETECTION_METHOD.IP}, {
+    details,
+    loggable = null
+} = {}) {
     try {
         const {options} = pluginProps || {};
 
@@ -263,11 +274,67 @@ const onInformingPlugins = function (req, res, pluginProps = {detectionMethodUni
             return null;
         }
 
-        if (options.detectionMethodUnique !== DETECTION_METHOD.COOKIE) {
-            return null;
+        let result;
+        if (options.detectionMethodUnique === DETECTION_METHOD.COOKIE) {
+            result = setCookieVisitor(req, res, {loggable});
         }
 
-        const result = setCookieVisitor(req, res, {loggable});
+        // wa-plus is the endpoint that will receive users' hits.
+        // We acknowledge GenServe that we handle this endpoint
+        // so we answer as quick as possible as we don't want to block GenServe main thread.
+        // To register the analytics, we will use onGenServe message which run in Web-Analyst own thread
+        if (req.url === "/wa-plus") {
+
+            if (req.method === "POST") {
+                let payload = decodeFetchedData(details.postedData, {loggable}) || {};
+                return {
+                    statusCode: 200,
+                    contentType: "application/json; charset=utf-8",
+                    response: {
+                        success: !!payload,
+                        message: "Data processed successfully.",
+                    },
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
+                    processed: true,
+                    result
+
+                };
+            } else if (req.method === "OPTIONS") {
+                return {
+                    statusCode: 204,
+                    processed: true,
+                    allow: "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Content-Security-Policy": "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' *; connect-src *;",
+                    result
+                };
+            }
+        }
+
+        // wa-replay is the endpoint that will return the way the user navigated the website.
+        // wa-replay cannot be handle in onGenserveMessage as the function doesn't send back any feedback to GenServe.
+        if (req.url === "/wa-replay" && req.method === "GET") {
+            const tokens = getRegisteredTokens();
+            return {
+                statusCode: 200,
+                contentType: "application/json; charset=utf-8",
+                response: {
+                    success: true,
+                    message: "All good now",
+                    content: tokens
+                },
+                processed: true,
+                result
+            };
+        }
+
         return result || null;
     } catch (e) {
         loggable.error({lid: "WA6553"}, e.message);
@@ -360,7 +427,10 @@ const setupEngine = function ({session, options, action}, {loggable = null} = {}
 };
 
 /**
- * GenServe message handler
+ * GenServe message handler meant to handle heavy operations.
+ * This is an event handler that intercepts GenServe messages.
+ * If you need something that runs in the same Thread as GenServe use onInformingPlugin.
+ * @note
  * Entrypoint for requests
  * @param pagePattern
  * @param action
@@ -390,13 +460,6 @@ async function onGenserveMessage({
                                      loggable
                                  } = {}) {
     try {
-        data = data || {};
-
-        // Holds the user unique token ID
-        let cookieData;
-        // Holds various information about devices
-        let clientSideData;
-
         if (action === "initialisation") {
             setGenserveDir(genserveDir);
 
@@ -404,7 +467,21 @@ async function onGenserveMessage({
             setupEngine({action, session, options}, {loggable});
 
             process.send && process.send("initialised");
-        } else if (action === "request") {
+            return;
+        }
+
+        if (req.method === "OPTIONS") {
+            return;
+        }
+
+        data = data || {};
+
+        // Holds the user unique token ID
+        let cookieData;
+        // Holds various information about devices
+        let clientSideData;
+
+        if (action === "request") {
             // Filter urls
             if (options.pages) {
                 const pages = options.pages || [];
@@ -431,17 +508,19 @@ async function onGenserveMessage({
                 }
             }
 
+            // Check whether the request is an endpoint handled by web-analyst
+            let isEndpoint = (options.gatheringMethod === DATA_GATHERING_METHOD.FETCH &&
+                (options.endpoints && options.endpoints[req.url]) &&
+                (!options.endpoints[req.url].method || options.endpoints[req.url].method === req.method));
+
             if (options.gatheringMethod === "cookie") {
                 clientSideData = getCookieAnalytics(req, {loggable});
-            }
-            else if (options.gatheringMethod === "fetch") {
-                // Check whether the request is an endpoint handled by web-analyst
-                let isEndpoint = (options.gatheringMethod === DATA_GATHERING_METHOD.FETCH &&
-                    (options.endpoints && options.endpoints[req.url]) &&
-                    (!options.endpoints[req.url].method || options.endpoints[req.url].method === req.method));
-
+            } else if (options.gatheringMethod === "fetch") {
                 if (isEndpoint && postedData) {
-                    const payload = getFetchedData(postedData, {loggable}) || {};
+                    if (postedData && postedData.beacon) {
+                        postedData = JSON.parse(postedData);
+                    }
+                    const payload = decodeFetchedData(postedData, {loggable}) || {};
                     clientSideData = payload.data;
                     // Rename this as now visitor token can be stored in cookie or browser storage
                     cookieData = payload.visitor;

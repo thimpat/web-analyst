@@ -63,33 +63,6 @@
         return o.join("");
     }
 
-    function lzwDecode(s) {
-        let i;
-        const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        const b64d = {};
-        for(i = 0; i<64; i++){
-            b64d[b64.charAt(i)]=i;
-        }
-        const d = new Map();
-        let num = 256;
-        let word = String.fromCharCode(b64d[s[0]] + (b64d[s[1]] << 6) + (b64d[s[2]] << 12));
-        let prev = word;
-        const o = [word];
-        for(i = 3; i<s.length; i+=3) {
-            const key = b64d[s[i]] + (b64d[s[i + 1]] << 6) + (b64d[s[i + 2]] << 12);
-            word=key<256 ? String.fromCharCode(key) : d.has(key) ? d.get(key) : word+word.charAt(0);
-            o.push(word);
-            d.set(num++, prev+word.charAt(0));
-            prev=word;
-            if(num==(1<<18)-1) {
-                d.clear();
-                num=256;
-            }
-        }
-        return decodeURIComponent(escape(o.join("")));
-    }
-
-
     // -------------------------------------------------
     // ID
     // -------------------------------------------------
@@ -291,11 +264,7 @@
         return clickAnalytics;
     }
 
-    function fetchRecordedEvents() {
-        return clickAnalytics;
-    }
-
-    // -------------------------------------------------
+     // -------------------------------------------------
     // endpoint-related
     // -------------------------------------------------
     /**
@@ -319,19 +288,13 @@
             const str = JSON.stringify({visitor, data});
             const payload = lzwEncode(str);
 
-            if (!lzwDecode(payload)) {
-                // Don't send invalid data
-                console.error(`Data decoding error`);
-                return;
-            }
-
             if (usedTechnics === "beacon") {
                 // The data for sendBeacon needs to be a Blob or a simple string
-                const beaconData = JSON.stringify({"wa-stats": payload});
-                const blob = new Blob([beaconData], {type: "application/json"});
+                // const beaconData = JSON.stringify({"wa-stats": payload});
+                // const blob = new Blob([beaconData], {type: "application/plain"});
 
-                // Use navigator.sendBeacon() for reliable data transmission on page unload
-                navigator.sendBeacon(serverUrl, blob);
+                const data = new URLSearchParams({"wa-stats": payload});
+                navigator.sendBeacon(serverUrl, data);
             }
             else {
                 const response = await fetch(serverUrl, {
@@ -363,14 +326,32 @@
 
         await initialiseDurations();
 
+        document.addEventListener("DOMContentLoaded", () => {
+            document.addEventListener("click", recordClick);
+            document.body.addEventListener("scroll", recordScroll);
+        });
+
+        // --------------------
+        // Monitor changes
+        // --------------------
+        window.addEventListener("visibilitychange", () => {
+            updateDuration();
+            uploadAnalytics("beacon");
+        });
+
         window.addEventListener("beforeunload", () => {
             updateDuration();
             uploadAnalytics("beacon");
         });
 
-        document.addEventListener("DOMContentLoaded", () => {
-            document.addEventListener("click", recordClick);
-            document.body.addEventListener("scroll", recordScroll);
+        window.addEventListener("popstate", () => {
+            updateDuration();
+            uploadAnalytics("beacon");
+        });
+
+        window.addEventListener("hashchange", () => {
+            updateDuration();
+            uploadAnalytics("fetch");
         });
 
         document.addEventListener("dblclick", () => {
