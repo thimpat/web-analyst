@@ -63,6 +63,16 @@
         return o.join("");
     }
 
+    function isInIframe() {
+        try {
+            return window.self !== window.top;
+        } catch (e) {
+            // This can throw a SecurityError if the parent is on a different origin.
+            // In this case, we know for sure we are in an iframe.
+            return true;
+        }
+    }
+
     // -------------------------------------------------
     // ID
     // -------------------------------------------------
@@ -357,6 +367,11 @@
         document.addEventListener("dblclick", () => {
             uploadAnalytics("fetch");
         });
+    }
+
+    if (isInIframe()) {
+        console.log("iframe Mode");
+        return ;
     }
 
     await init();

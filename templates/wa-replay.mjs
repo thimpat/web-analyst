@@ -78,31 +78,375 @@
     // -------------------------------------------------
     // Replay
     // -------------------------------------------------
-    function generateLinks(arr, { targetDiv = "body", maxLinks = 20 } = {}) {
+    // A global object to manage the state of the replay
+    let eventState = {
+        currentIndex: 0,
+        currentTimeout: null,
+        events: [],
+        contentWindow: null,
+        isPlaying: false
+    };
+
+// Function to play a single event
+    function playSingleEvent(event, contentWindow) {
+        if (event.type === "click") {
+            const clickEvent = new contentWindow.MouseEvent("click", {
+                bubbles: true,
+                clientX: event.coordinates.x,
+                clientY: event.coordinates.y,
+            });
+            contentWindow.document.body.dispatchEvent(clickEvent);
+        } else if (event.type === "scroll") {
+            contentWindow.scrollTo(0, event.scrollY);
+        }
+    }
+
+// UI and control functions for manual playback
+    function createPlaybackControls() {
+        // Check if controls already exist to avoid creating duplicates
+        if (document.getElementById("playback-controls")) {
+            return;
+        }
+
+        const controlsContainer = document.createElement("div");
+        controlsContainer.id = "playback-controls";
+        controlsContainer.style.position = "fixed";
+        controlsContainer.style.bottom = "20px";
+        controlsContainer.style.left = "50%";
+        controlsContainer.style.transform = "translateX(-50%)";
+        controlsContainer.style.background = "rgba(0,0,0,0.7)";
+        controlsContainer.style.color = "white";
+        controlsContainer.style.padding = "10px";
+        controlsContainer.style.borderRadius = "10px";
+        controlsContainer.style.zIndex = "10001";
+        controlsContainer.style.display = "flex";
+        controlsContainer.style.alignItems = "center";
+        controlsContainer.style.gap = "10px";
+
+        const prevBtn = document.createElement("button");
+        prevBtn.id = "prev-btn";
+        prevBtn.textContent = "<";
+        prevBtn.style.background = "none";
+        prevBtn.style.border = "1px solid white";
+        prevBtn.style.color = "white";
+        prevBtn.style.borderRadius = "5px";
+        prevBtn.style.cursor = "pointer";
+
+        const nextBtn = document.createElement("button");
+        nextBtn.id = "next-btn";
+        nextBtn.textContent = ">";
+        nextBtn.style.background = "none";
+        nextBtn.style.border = "1px solid white";
+        nextBtn.style.color = "white";
+        nextBtn.style.borderRadius = "5px";
+        nextBtn.style.cursor = "pointer";
+
+        const statusSpan = document.createElement("span");
+        statusSpan.id = "status-display";
+        statusSpan.textContent = "Click > to begin";
+
+        controlsContainer.appendChild(prevBtn);
+        controlsContainer.appendChild(statusSpan);
+        controlsContainer.appendChild(nextBtn);
+        document.body.appendChild(controlsContainer);
+
+        // Set up event listeners for the buttons
+        prevBtn.onclick = playPrev;
+        nextBtn.onclick = playNext;
+    }
+
+    function playNext() {
+        eventState.currentIndex++;
+        if (eventState.currentIndex >= eventState.events.length) {
+            eventState.currentIndex = eventState.events.length - 1;
+            console.log("End of replay.");
+            return;
+        }
+
+        const event = eventState.events[eventState.currentIndex];
+        playSingleEvent(event, eventState.contentWindow);
+        updateControls();
+    }
+
+    function playPrev() {
+        eventState.currentIndex--;
+        if (eventState.currentIndex < 0) {
+            eventState.currentIndex = 0;
+            console.log("Beginning of replay.");
+            return;
+        }
+
+        const event = eventState.events[eventState.currentIndex];
+        playSingleEvent(event, eventState.contentWindow);
+        updateControls();
+    }
+
+    function updateControls() {
+        // Update the UI to show the current event index
+        const statusDiv = document.getElementById("status-display");
+        if (statusDiv) {
+            statusDiv.textContent = `Event: ${eventState.currentIndex + 1} / ${eventState.events.length}`;
+        }
+    }
+
+    function manualPlay(events, contentWindow) {
+        if (!events || !events.length) {
+            console.warn("No events to replay.");
+            return;
+        }
+
+        eventState = {
+            currentIndex: -1,
+            events,
+            contentWindow
+        };
+
+        createPlaybackControls();
+        updateControls();
+    }
+
+// The main function with the mode parameter
+    async function playEvents(token, mode = "auto") {
+        try {
+            const url = `/wa-replay?tokenStatID=${token}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`HTTP error! status: ${response.status}`);
+                return;
+            }
+
+            const data = await response.json();
+            const behaviors = data.content.behaviors;
+            const iframe = document.getElementById("replay-iframe");
+
+            if (!behaviors || !behaviors.length) {
+                console.warn("No behaviors to replay.");
+                return;
+            }
+
+            let promiseChain = Promise.resolve();
+
+            behaviors.forEach((behavior) => {
+                promiseChain = promiseChain.then(async () => {
+                    iframe.src = behavior.visitedPage;
+                    const [width, height] = behavior.viewport.split("x");
+                    iframe.style.width = `${width}px`;
+                    iframe.style.height = `${height}px`;
+
+                    return new Promise(resolve => {
+                        iframe.onload = () => {
+                            console.log(`Mapsd to: ${behavior.visitedPage}`);
+                            const events = behavior.events;
+
+                            if (mode === "auto") {
+                                autoPlay(events, iframe.contentWindow).then(resolve);
+                            } else {
+                                manualPlay(events, iframe.contentWindow);
+                                resolve(); // Resolve immediately for manual mode
+                            }
+                        };
+                    });
+                });
+            });
+
+        } catch (err) {
+            console.error("Error during event playback:", err);
+        }
+    }
+
+// Function to handle automatic playback
+    function autoPlay(events, contentWindow) {
+        if (!events.length) {
+            console.warn("No events to replay.");
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            let lastEventTime = new Date(events[0].timestamp).getTime();
+
+            events.forEach((event, index) => {
+                const timeDelta = new Date(event.timestamp).getTime() - lastEventTime;
+                lastEventTime = new Date(event.timestamp).getTime();
+
+                setTimeout(() => {
+                    playSingleEvent(event, contentWindow);
+
+                    if (index === events.length - 1) {
+                        setTimeout(resolve, 500);
+                    }
+                }, timeDelta);
+            });
+        });
+    }
+
+    function generateLinks(arr, {targetDiv = "body", maxLinks = 20} = {}) {
         if (!Array.isArray(arr)) {
             console.error("First argument must be an array");
             return;
         }
 
         let cleanBaseUrl = document.location.origin + "/wa-replay";
-        // Ensure proper URL formatting (remove trailing slash if present)
         cleanBaseUrl = cleanBaseUrl.replace(/\/$/, "");
 
         const limitedArr = arr.slice(0, maxLinks);
-        const container = document.createElement("div");
-        container.id="wa-replay-list-container";
-        container.classList.add("wa-replay-list-container");
 
-        limitedArr.forEach(id => {
-            const link = document.createElement("a");
-            link.href = `${cleanBaseUrl}?tokenStatID=${id}`;
-            link.textContent = id;
-            link.className = "generated-link";
+        // Create main container
+        const mainContainer = document.createElement("div");
+        mainContainer.id = "wa-replay-main-container";
+        mainContainer.classList.add("wa-replay-main-container");
 
-            container.appendChild(link);
-            container.appendChild(document.createElement("br"));
+        // Create header with title and minimize button
+        const header = document.createElement("div");
+        header.classList.add("wa-replay-header");
+
+        const title = document.createElement("span");
+        title.textContent = "Replay Sessions";
+        title.classList.add("wa-replay-title");
+
+        const minimizeBtn = document.createElement("button");
+        minimizeBtn.innerHTML = "+";
+        minimizeBtn.classList.add("wa-replay-minimize-btn");
+        minimizeBtn.title = "Minimize";
+
+        header.appendChild(title);
+        header.appendChild(minimizeBtn);
+
+        // Create content container
+        const contentContainer = document.createElement("div");
+        contentContainer.id = "wa-replay-list-container";
+        contentContainer.classList.add("wa-replay-list-container");
+
+        // Create minimized icon (initially hidden)
+        const minimizedIcon = document.createElement("div");
+        minimizedIcon.classList.add("wa-replay-minimized-icon");
+        minimizedIcon.innerHTML = " ";
+        minimizedIcon.title = "Restore Replay List";
+        minimizedIcon.style.display = "none";
+
+        // Populate content
+        for (let k in limitedArr) {
+            const item = limitedArr[k];
+            const time = item.time;
+            const dateObject = new Date(time);
+            const friendlyString = dateObject.toLocaleString();
+
+            // Create a span to act as the clickable link
+            const link = document.createElement("span");
+            link.textContent = `${friendlyString} - ${item.resolution}`;
+            link.title = item.id;
+            link.className = "wa-replay-link";
+
+            // Add a click event listener to the span
+            link.addEventListener("click", () => {
+                // Call the playEvents function with the correct token
+                playEvents(item.id, "manual");
+            });
+
+            contentContainer.appendChild(link);
+            contentContainer.appendChild(document.createElement("br"));
+        }
+
+        // Add elements to main container
+        mainContainer.appendChild(header);
+        mainContainer.appendChild(contentContainer);
+        mainContainer.appendChild(minimizedIcon);
+
+        // Drag functionality
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        header.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            dragOffsetX = e.clientX - mainContainer.getBoundingClientRect().left;
+            dragOffsetY = e.clientY - mainContainer.getBoundingClientRect().top;
+            mainContainer.style.cursor = "grabbing";
+            e.preventDefault();
         });
 
+        document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+
+            const x = e.clientX - dragOffsetX;
+            const y = e.clientY - dragOffsetY;
+
+            // Keep within viewport boundaries
+            const maxX = window.innerWidth - mainContainer.offsetWidth;
+            const maxY = window.innerHeight - mainContainer.offsetHeight;
+
+            mainContainer.style.left = Math.max(0, Math.min(x, maxX)) + "px";
+            mainContainer.style.top = Math.max(0, Math.min(y, maxY)) + "px";
+            mainContainer.style.right = "auto"; // Reset right positioning
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            mainContainer.style.cursor = "grab";
+        });
+
+        // Also make minimized icon draggable
+        let isIconDragging = false;
+        let iconDragOffsetX = 0;
+        let iconDragOffsetY = 0;
+
+        minimizedIcon.addEventListener("mousedown", (e) => {
+            isIconDragging = true;
+            iconDragOffsetX = e.clientX - minimizedIcon.getBoundingClientRect().left;
+            iconDragOffsetY = e.clientY - minimizedIcon.getBoundingClientRect().top;
+            minimizedIcon.style.cursor = "grabbing";
+            e.preventDefault();
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isIconDragging) return;
+
+            const x = e.clientX - iconDragOffsetX;
+            const y = e.clientY - iconDragOffsetY;
+
+            // Keep within viewport boundaries
+            const maxX = window.innerWidth - minimizedIcon.offsetWidth;
+            const maxY = window.innerHeight - minimizedIcon.offsetHeight;
+
+            minimizedIcon.style.left = Math.max(0, Math.min(x, maxX)) + "px";
+            minimizedIcon.style.top = Math.max(0, Math.min(y, maxY)) + "px";
+            minimizedIcon.style.right = "auto"; // Reset right positioning
+        });
+
+        document.addEventListener("mouseup", () => {
+            isIconDragging = false;
+            minimizedIcon.style.cursor = "grab";
+        });
+
+        // Toggle functionality
+        let isMinimized = false;
+
+        minimizeBtn.addEventListener("click", () => {
+            isMinimized = true;
+            contentContainer.style.display = "none";
+            minimizedIcon.style.display = "block";
+            minimizeBtn.innerHTML = "+";
+            minimizeBtn.title = "Restore";
+
+            // Position icon where the container was
+            const rect = mainContainer.getBoundingClientRect();
+            minimizedIcon.style.left = rect.left + "px";
+            minimizedIcon.style.top = rect.top + "px";
+        });
+
+        minimizedIcon.addEventListener("click", () => {
+            isMinimized = false;
+            contentContainer.style.display = "block";
+            minimizedIcon.style.display = "none";
+            minimizeBtn.innerHTML = "+";
+            minimizeBtn.title = "Minimize";
+
+            // Position container where the icon was
+            const rect = minimizedIcon.getBoundingClientRect();
+            mainContainer.style.left = rect.left + "px";
+            mainContainer.style.top = rect.top + "px";
+        });
+
+        // Find target element
         const targetElement = targetDiv === "body"
             ? document.body
             : typeof targetDiv === "string"
@@ -114,12 +458,141 @@
             return;
         }
 
-        targetElement.appendChild(container);
+        targetElement.appendChild(mainContainer);
+
+        // Add CSS styles
+        const styles = `
+        .wa-replay-main-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            // border: 2px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 400px;
+            font-family: Arial, sans-serif;
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .wa-replay-main-container:active {
+            cursor: grabbing;
+        }
+        
+        .wa-replay-header {
+            background: #007bff;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        
+        .wa-replay-header:active {
+            cursor: grabbing;
+        }
+        
+        .wa-replay-title {
+            font-weight: bold;
+            font-size: 14px;
+            user-select: none;
+        }
+        
+        .wa-replay-minimize-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001; /* Above drag area */
+        }
+        
+        .wa-replay-minimize-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .wa-replay-list-container {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            cursor: auto;
+        }
+        
+        .wa-replay-link {
+            display: block;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 12px;
+            transition: all 0.2s;
+            word-break: break-all;
+            cursor: pointer;
+        }
+        
+        .wa-replay-link:hover {
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .wa-replay-minimized-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size: 18px;
+            z-index: 10000;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+        
+        .wa-replay-minimized-icon:active {
+            cursor: grabbing;
+        }
+        
+        .wa-replay-minimized-icon:hover {
+            transform: scale(1.1);
+            background: #0056b3;
+        }
+        
+        .wa-replay-list-container br {
+            margin: 2px 0;
+        }
+    `;
+
+        // Add styles to document
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = styles;
+        document.head.appendChild(styleSheet);
     }
-    
+
     async function fetchRecordedEvents() {
-        const response = await fetch(serverUrl + "?" + new URLSearchParams({
-        }).toString(), {
+        const response = await fetch(serverUrl + "?" + new URLSearchParams({}).toString(), {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -132,7 +605,6 @@
 
         const result = await response.json();
         const list = result.content;
-        console.log(result);
         generateLinks(list);
     }
 
