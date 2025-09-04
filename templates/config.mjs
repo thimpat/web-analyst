@@ -1,3 +1,3 @@
 export const CONFIG = {
-  "HIDE_EARNING_CHARTS": false
+  "HIDE_EARNING_CHARTS": true
 };
