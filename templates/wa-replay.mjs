@@ -1,6 +1,4 @@
 (async function () {
-    // Clicks
-    const MAX_EVENTS = 200;
 
     const clickAnalytics = [];
     let serverUrl = "/wa-replay";
@@ -11,7 +9,7 @@
         const urlObj = new URL(`${serverUrl}`, `${protocol}//${baseUrl}:${forcePort}`);
         serverUrl = urlObj.toString();
     }
-    console.log("web-analyst replayer v1.0");
+    console.log("wa-replay v1.01");
 
     // -------------------------------------------------
     // Utility
@@ -36,41 +34,6 @@
     // -------------------------------------------------
     // advanced-analytics (to detect bots)
     // -------------------------------------------------
-    function filterAnalytics() {
-        // Maintain max size by removing oldest
-        if (clickAnalytics.length >= MAX_EVENTS) {
-            clickAnalytics.shift();
-        }
-    }
-
-    function getLeanSelector(el) {
-        if (el.id) {
-            return `#${el.id}`;
-        }
-
-        const path = [];
-        while (el && el.nodeType === Node.ELEMENT_NODE) {
-            const tag = el.tagName.toLowerCase();
-
-            // Count siblings of same type
-            const siblings = Array.from(el.parentNode.children).filter(
-                sibling => sibling.tagName === el.tagName
-            );
-            const index = siblings.indexOf(el) + 1;
-
-            const selector = `${tag}:nth-of-type(${index})`;
-            path.unshift(selector);
-
-            // Stop early if selector is unique enough
-            const testSelector = path.join(" > ");
-            if (document.querySelectorAll(testSelector).length === 1) break;
-
-            el = el.parentNode;
-        }
-
-        return path.join(" > ");
-    }
-
     function getRecordedEvents() {
         return clickAnalytics;
     }
@@ -80,24 +43,87 @@
     // -------------------------------------------------
     // A global object to manage the state of the replay
     let eventState = {
-        currentIndex: 0,
-        currentTimeout: null,
-        events: [],
-        contentWindow: null,
-        isPlaying: false
+        behaviors: [],
+        currentBehaviorIndex: 0,
+        currentEventIndex: -1,
+        iframeContentWindow: null,
     };
 
-// Function to play a single event
-    function playSingleEvent(event, contentWindow) {
+// Helper function to create a promise that resolves on iframe load
+    function waitForIframeLoad(iframe) {
+        return new Promise(resolve => {
+            iframe.onload = () => {
+                console.log("Iframe finished loading.");
+                resolve();
+            };
+        });
+    }
+
+    /**
+     * Play a single event from the event pool
+     * @param event
+     */
+    function playSingleEvent(event) {
+        console.log("playSingleEvent", event);
+
+        const iframe = document.getElementById("replay-iframe");
+        if (!iframe || !iframe.contentWindow) {
+            console.error("Iframe is not ready or content window is unavailable.");
+            return;
+        }
+
+        const contentWindow = iframe.contentWindow;
+
+        console.log("Playing event:", event.type);
+
         if (event.type === "click") {
-            const clickEvent = new contentWindow.MouseEvent("click", {
-                bubbles: true,
-                clientX: event.coordinates.x,
-                clientY: event.coordinates.y,
-            });
-            contentWindow.document.body.dispatchEvent(clickEvent);
+            console.log(event);
+
+            // Try to find the element using the selector first
+            if (event.selector) {
+                try {
+                    targetElement = contentWindow.document.querySelector(event.selector);
+                } catch (e) {
+                    console.error(`Invalid selector: ${event.selector}`, e);
+                }
+            }
+
+            // If an element is found, dispatch the event on it
+            if (targetElement) {
+            const clickEvent = new contentWindow.MouseEvent("click", { bubbles: true });
+                targetElement.dispatchEvent(clickEvent);
+                console.log("Clicked on element using selector:", event.selector);
+            } else if (event.coordinates) {
+                // Fallback to coordinates if no selector is available or found
+                const clickEvent = new contentWindow.MouseEvent("click", {
+                    bubbles: true,
+                    clientX: event.coordinates.x,
+                    clientY: event.coordinates.y,
+                });
+                contentWindow.document.body.dispatchEvent(clickEvent);
+                console.log("Clicked on document body using coordinates.");
+            } else {
+                console.warn("Click event ignored: no selector or coordinates provided.");
+            }
         } else if (event.type === "scroll") {
-            contentWindow.scrollTo(0, event.scrollY);
+            const selector = event.selector ? event.selector.toLowerCase() : "";
+            let targetElement = null;
+
+            // Check if the scroll is on the body or another specific element
+            if (selector === "body" || selector === "html") {
+                targetElement = contentWindow.document.documentElement;
+            } else {
+                targetElement = contentWindow.document.querySelector(selector);
+            }
+
+            if (targetElement) {
+                targetElement.scrollTo({
+                    top: event.scrollY,
+                    behavior: "smooth"
+                });
+            } else {
+                console.warn(`Scroll target element not found for selector: ${event.selector}`);
+            }
         }
     }
 
@@ -123,6 +149,15 @@
         controlsContainer.style.alignItems = "center";
         controlsContainer.style.gap = "10px";
 
+        const prevPageBtn = document.createElement("button");
+        prevPageBtn.id = "prev-page-btn";
+        prevPageBtn.textContent = "<<";
+        prevPageBtn.style.background = "none";
+        prevPageBtn.style.border = "1px solid white";
+        prevPageBtn.style.color = "white";
+        prevPageBtn.style.borderRadius = "5px";
+        prevPageBtn.style.cursor = "pointer";
+
         const prevBtn = document.createElement("button");
         prevBtn.id = "prev-btn";
         prevBtn.textContent = "<";
@@ -141,72 +176,168 @@
         nextBtn.style.borderRadius = "5px";
         nextBtn.style.cursor = "pointer";
 
+        const nextPageBtn = document.createElement("button");
+        nextPageBtn.id = "next-page-btn";
+        nextPageBtn.textContent = ">>";
+        nextPageBtn.style.background = "none";
+        nextPageBtn.style.border = "1px solid white";
+        nextPageBtn.style.color = "white";
+        nextPageBtn.style.borderRadius = "5px";
+        nextPageBtn.style.cursor = "pointer";
+
         const statusSpan = document.createElement("span");
         statusSpan.id = "status-display";
         statusSpan.textContent = "Click > to begin";
+        statusSpan.style.width = "150px";
+        statusSpan.style.textAlign = "center";
 
+        controlsContainer.appendChild(prevPageBtn);
         controlsContainer.appendChild(prevBtn);
         controlsContainer.appendChild(statusSpan);
         controlsContainer.appendChild(nextBtn);
+        controlsContainer.appendChild(nextPageBtn);
         document.body.appendChild(controlsContainer);
 
-        // Set up event listeners for the buttons
+        prevPageBtn.onclick = prevBehavior;
         prevBtn.onclick = playPrev;
         nextBtn.onclick = playNext;
+        nextPageBtn.onclick = nextBehavior;
+    }
+
+    function nextBehavior() {
+        eventState.currentBehaviorIndex++;
+        if (eventState.currentBehaviorIndex >= eventState.behaviors.length) {
+            eventState.currentBehaviorIndex = eventState.behaviors.length - 1;
+            console.log("End of replay behaviors.");
+            return;
+        }
+        loadBehavior(eventState.behaviors[eventState.currentBehaviorIndex]);
+    }
+
+    function prevBehavior() {
+        eventState.currentBehaviorIndex--;
+        if (eventState.currentBehaviorIndex < 0) {
+            eventState.currentBehaviorIndex = 0;
+            console.log("Beginning of replay behaviors.");
+            return;
+        }
+        loadBehavior(eventState.behaviors[eventState.currentBehaviorIndex]);
     }
 
     function playNext() {
-        eventState.currentIndex++;
-        if (eventState.currentIndex >= eventState.events.length) {
-            eventState.currentIndex = eventState.events.length - 1;
-            console.log("End of replay.");
+        const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
+        if (!currentBehavior || !currentBehavior.events) return;
+
+        eventState.currentEventIndex++;
+        if (eventState.currentEventIndex >= currentBehavior.events.length) {
+            console.log("End of events for this page.");
+            eventState.currentEventIndex = currentBehavior.events.length;
+            updateControls();
             return;
         }
 
-        const event = eventState.events[eventState.currentIndex];
-        playSingleEvent(event, eventState.contentWindow);
+        const event = currentBehavior.events[eventState.currentEventIndex];
+        playSingleEvent(event);
         updateControls();
     }
 
     function playPrev() {
-        eventState.currentIndex--;
-        if (eventState.currentIndex < 0) {
-            eventState.currentIndex = 0;
-            console.log("Beginning of replay.");
+        const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
+        if (!currentBehavior || !currentBehavior.events) return;
+
+        eventState.currentEventIndex--;
+        if (eventState.currentEventIndex < -1) {
+            eventState.currentEventIndex = -1;
+            console.log("Beginning of events for this page.");
+            updateControls();
             return;
         }
 
-        const event = eventState.events[eventState.currentIndex];
-        playSingleEvent(event, eventState.contentWindow);
+        const event = currentBehavior.events[eventState.currentEventIndex];
+        playSingleEvent(event);
         updateControls();
     }
 
     function updateControls() {
-        // Update the UI to show the current event index
         const statusDiv = document.getElementById("status-display");
         if (statusDiv) {
-            statusDiv.textContent = `Event: ${eventState.currentIndex + 1} / ${eventState.events.length}`;
+            const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
+            const eventCount = currentBehavior ? currentBehavior.events.length : 0;
+            statusDiv.textContent = `Page ${eventState.currentBehaviorIndex + 1}/${eventState.behaviors.length} | Event ${eventState.currentEventIndex + 1}/${eventCount}`;
         }
     }
 
-    function manualPlay(events, contentWindow) {
-        if (!events || !events.length) {
-            console.warn("No events to replay.");
-            return;
-        }
+    async function loadBehavior(behavior) {
+        const iframe = document.getElementById("replay-iframe");
+        iframe.src = behavior.visitedPage;
+        const [width, height] = behavior.viewport.split("x");
+        iframe.style.width = `${width}px`;
+        iframe.style.height = `${height}px`;
 
-        eventState = {
-            currentIndex: -1,
-            events,
-            contentWindow
-        };
+        await new Promise(resolve => iframe.onload = resolve);
 
-        createPlaybackControls();
+        // Update the content window reference
+        eventState.iframeContentWindow = iframe.contentWindow;
+
+        const replayTitle = document.getElementById("replay-title");
+        replayTitle.textContent = behavior.visitedPage;
+
+        eventState.currentEventIndex = -1; // Reset event index for the new page
         updateControls();
     }
 
-// The main function with the mode parameter
-    async function playEvents(token, mode = "auto") {
+    async function manualPlay(behaviors) {
+        if (!behaviors || !behaviors.length) {
+            console.warn("No behaviors to replay.");
+            return;
+        }
+
+        eventState.behaviors = behaviors;
+        eventState.currentBehaviorIndex = 0;
+        eventState.currentEventIndex = -1;
+
+        createPlaybackControls();
+
+        // Load the first behavior and wait for it
+        await loadBehavior(eventState.behaviors[eventState.currentBehaviorIndex]);
+    }
+
+    async function autoPlay(events, contentWindow) {
+        if (!events || !events.length) {
+            console.warn("No events to replay.");
+            return Promise.resolve();
+        }
+        return new Promise(resolve => {
+            let lastEventTime = new Date(events[0].timestamp).getTime();
+            events.forEach((event, index) => {
+                const timeDelta = new Date(event.timestamp).getTime() - lastEventTime;
+                lastEventTime = new Date(event.timestamp).getTime();
+                setTimeout(() => {
+                    // playSingleEvent is not meant to be called here in auto mode. This is the issue.
+                    if (event.type === "click") {
+                        const clickEvent = new contentWindow.MouseEvent("click", {
+                            bubbles: true,
+                            clientX: event.coordinates.x,
+                            clientY: event.coordinates.y,
+                        });
+                        contentWindow.document.body.dispatchEvent(clickEvent);
+                    } else if (event.type === "scroll") {
+                        contentWindow.scrollTo({
+                            top: event.scrollY,
+                            left: 0,
+                            behavior: "smooth",
+                        });
+                    }
+                    if (index === events.length - 1) {
+                        setTimeout(resolve, 500);
+                    }
+                }, timeDelta);
+            });
+        });
+    }
+
+
+    async function playEvents(token, mode = "manual") {
         try {
             const url = `/wa-replay?tokenStatID=${token}`;
             const response = await fetch(url);
@@ -224,31 +355,20 @@
                 return;
             }
 
-            let promiseChain = Promise.resolve();
-
-            behaviors.forEach((behavior) => {
-                promiseChain = promiseChain.then(async () => {
+            if (mode === "auto") {
+                for (const behavior of behaviors) {
                     iframe.src = behavior.visitedPage;
                     const [width, height] = behavior.viewport.split("x");
                     iframe.style.width = `${width}px`;
                     iframe.style.height = `${height}px`;
-
-                    return new Promise(resolve => {
-                        iframe.onload = () => {
-                            console.log(`Mapsd to: ${behavior.visitedPage}`);
-                            const events = behavior.events;
-
-                            if (mode === "auto") {
-                                autoPlay(events, iframe.contentWindow).then(resolve);
-                            } else {
-                                manualPlay(events, iframe.contentWindow);
-                                resolve(); // Resolve immediately for manual mode
-                            }
-                        };
-                    });
-                });
-            });
-
+                    await new Promise(resolve => iframe.onload = resolve);
+                    const events = behavior.events;
+                    await autoPlay(events, iframe.contentWindow);
+                }
+            } else {
+                const contentWindow = iframe.contentWindow;
+                await manualPlay(behaviors, contentWindow);
+            }
         } catch (err) {
             console.error("Error during event playback:", err);
         }
@@ -279,6 +399,12 @@
         });
     }
 
+    /**
+     * Generates a list of clickable links against the list of tokens
+     * @param arr
+     * @param targetDiv
+     * @param maxLinks
+     */
     function generateLinks(arr, {targetDiv = "body", maxLinks = 20} = {}) {
         if (!Array.isArray(arr)) {
             console.error("First argument must be an array");
@@ -459,136 +585,6 @@
         }
 
         targetElement.appendChild(mainContainer);
-
-        // Add CSS styles
-        const styles = `
-        .wa-replay-main-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            // border: 2px solid #007bff;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            min-width: 300px;
-            max-width: 400px;
-            font-family: Arial, sans-serif;
-            cursor: grab;
-            user-select: none;
-        }
-        
-        .wa-replay-main-container:active {
-            cursor: grabbing;
-        }
-        
-        .wa-replay-header {
-            background: #007bff;
-            color: white;
-            padding: 12px 15px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: grab;
-        }
-        
-        .wa-replay-header:active {
-            cursor: grabbing;
-        }
-        
-        .wa-replay-title {
-            font-weight: bold;
-            font-size: 14px;
-            user-select: none;
-        }
-        
-        .wa-replay-minimize-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-            z-index: 10001; /* Above drag area */
-        }
-        
-        .wa-replay-minimize-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .wa-replay-list-container {
-            padding: 15px;
-            max-height: 400px;
-            overflow-y: auto;
-            cursor: auto;
-        }
-        
-        .wa-replay-link {
-            display: block;
-            padding: 8px 12px;
-            margin: 5px 0;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            text-decoration: none;
-            color: #007bff;
-            font-size: 12px;
-            transition: all 0.2s;
-            word-break: break-all;
-            cursor: pointer;
-        }
-        
-        .wa-replay-link:hover {
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-        }
-        
-        .wa-replay-minimized-icon {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #007bff;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: grab;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-size: 18px;
-            z-index: 10000;
-            transition: transform 0.2s;
-            user-select: none;
-        }
-        
-        .wa-replay-minimized-icon:active {
-            cursor: grabbing;
-        }
-        
-        .wa-replay-minimized-icon:hover {
-            transform: scale(1.1);
-            background: #0056b3;
-        }
-        
-        .wa-replay-list-container br {
-            margin: 2px 0;
-        }
-    `;
-
-        // Add styles to document
-        const styleSheet = document.createElement("style");
-        styleSheet.textContent = styles;
-        document.head.appendChild(styleSheet);
     }
 
     async function fetchRecordedEvents() {
@@ -605,7 +601,7 @@
 
         const result = await response.json();
         const list = result.content;
-        generateLinks(list);
+        return list;
     }
 
     function blockUserInteraction() {
@@ -683,17 +679,19 @@
 
     async function init() {
 
-        document.addEventListener("keydown", function (event) {
-            const isCtrlR = event.altKey && event.key.toLowerCase() === "p";
+        // document.addEventListener("keydown", function (event) {
+        //     const isCtrlR = event.altKey && event.key.toLowerCase() === "p";
+        //
+        //     if (isCtrlR) {
+        //         event.preventDefault();
+        //         console.log("🔁 CTRL + R pressed — starting replay");
+        //         replayEvents();
+        //     }
+        // });
 
-            if (isCtrlR) {
-                event.preventDefault();
-                console.log("🔁 CTRL + R pressed — starting replay");
-                replayEvents();
-            }
-        });
+        const list = await fetchRecordedEvents();
+        generateLinks(list);
 
-        await fetchRecordedEvents();
         createIframe(document.location.origin);
 
     }

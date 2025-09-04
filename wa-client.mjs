@@ -22,7 +22,7 @@
         serverUrl = urlObj.toString();
     }
 
-    console.log("wa version 1.05");
+    console.log("wa-client version 1.07");
 
     // -------------------------------------------------
     // Utility
@@ -39,7 +39,7 @@
         let key;
         const o = [];
 
-        function out(word,num) {
+        function out(word) {
             key=word.length>1 ? d.get(word) : word.charCodeAt(0);
             o.push(b64[key&0x3f]);
             o.push(b64[(key>>6)&0x3f]);
@@ -51,7 +51,7 @@
                 word+=c;
             } else {
                 d.set(word+c,num++);
-                out(word,num);
+                out(word);
                 word=c;
                 if(num==(1<<18)-1) {
                     d.clear();
@@ -260,6 +260,7 @@
             const entry = {
                 type: "scroll",
                 selector: getLeanSelector(this),
+                container: getLeanSelector(this),
                 timestamp: new Date().toISOString(),
                 scrollY: currentY
             };
@@ -370,10 +371,11 @@
     }
 
     if (isInIframe()) {
-        console.log("iframe Mode");
+        console.log("wa iframe Mode");
         return ;
     }
 
+    console.log("wa standard Mode");
     await init();
 
 })();
