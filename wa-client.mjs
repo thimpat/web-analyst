@@ -10,7 +10,7 @@
 
     let totalDuration = 0;
     let activeStart = null;
-    const clickAnalytics = [];
+    const evList = [];
 
     let forcePort = document.location.port === "8010" ? "8092" : document.location.port;
     const protocol = document.location.protocol;
@@ -22,7 +22,7 @@
         serverUrl = urlObj.toString();
     }
 
-    console.log("wa-client version 1.07");
+    console.log("wa-client version 1.08");
 
     // -------------------------------------------------
     // Utility
@@ -195,8 +195,8 @@
     // -------------------------------------------------
     function filterAnalytics() {
         // Maintain max size by removing oldest
-        if (clickAnalytics.length >= MAX_EVENTS) {
-            clickAnalytics.shift();
+        if (evList.length >= MAX_EVENTS) {
+            evList.shift();
         }
     }
 
@@ -231,11 +231,13 @@
     function recordClick(event) {
         const el = event.target;
 
+        const page = document.location.pathname + document.location.search + document.location.hash;
         const entry = {
             type: "click",
             target: event.target.tagName,              // Element type (e.g., BUTTON, DIV)
             timestamp: new Date().toISOString(),       // ISO format for consistency
             selector: getLeanSelector(el),
+            page,
             coordinates: {
                 x: event.clientX,                        // X position relative to viewport
                 y: event.clientY                         // Y position relative to viewport
@@ -244,7 +246,7 @@
 
         filterAnalytics();
 
-        clickAnalytics.push(entry);
+        evList.push(entry);
     }
 
     function recordScroll() {
@@ -257,22 +259,24 @@
         ) {
             filterAnalytics();
 
+            const page = document.location.pathname + document.location.search + document.location.hash;
             const entry = {
                 type: "scroll",
                 selector: getLeanSelector(this),
                 container: getLeanSelector(this),
                 timestamp: new Date().toISOString(),
+                page,
                 scrollY: currentY
             };
 
-            clickAnalytics.push(entry);
+            evList.push(entry);
             lastScrollY = currentY;
             lastScrollTime = now;
         }
     }
 
     function getRecordedEvents() {
-        return clickAnalytics;
+        return evList;
     }
 
      // -------------------------------------------------
@@ -338,8 +342,13 @@
         await initialiseDurations();
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.addEventListener("click", recordClick);
+            document.addEventListener("click", function (event) {
+                recordClick(event);
+            });
             document.body.addEventListener("scroll", recordScroll);
+
+            updateDuration();
+            uploadAnalytics("fetch");
         });
 
         // --------------------
@@ -347,7 +356,7 @@
         // --------------------
         window.addEventListener("visibilitychange", () => {
             updateDuration();
-            uploadAnalytics("beacon");
+            uploadAnalytics("fetch");
         });
 
         window.addEventListener("beforeunload", () => {
@@ -357,7 +366,7 @@
 
         window.addEventListener("popstate", () => {
             updateDuration();
-            uploadAnalytics("beacon");
+            uploadAnalytics("fetch");
         });
 
         window.addEventListener("hashchange", () => {

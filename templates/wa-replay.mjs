@@ -9,7 +9,7 @@
         const urlObj = new URL(`${serverUrl}`, `${protocol}//${baseUrl}:${forcePort}`);
         serverUrl = urlObj.toString();
     }
-    console.log("wa-replay v1.01");
+    console.log("wa-replay v1.02");
 
     // -------------------------------------------------
     // Utility
@@ -77,6 +77,7 @@
         console.log("Playing event:", event.type);
 
         if (event.type === "click") {
+            let targetElement = null;
             console.log(event);
 
             // Try to find the element using the selector first
@@ -90,7 +91,7 @@
 
             // If an element is found, dispatch the event on it
             if (targetElement) {
-            const clickEvent = new contentWindow.MouseEvent("click", { bubbles: true });
+                const clickEvent = new contentWindow.MouseEvent("click", {bubbles: true});
                 targetElement.dispatchEvent(clickEvent);
                 console.log("Clicked on element using selector:", event.selector);
             } else if (event.coordinates) {
@@ -226,44 +227,62 @@
 
     function playNext() {
         const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
-        if (!currentBehavior || !currentBehavior.events) return;
 
-        eventState.currentEventIndex++;
-        if (eventState.currentEventIndex >= currentBehavior.events.length) {
-            console.log("End of events for this page.");
-            eventState.currentEventIndex = currentBehavior.events.length;
-            updateControls();
+    // Case 1: End of events for the current page
+    if (eventState.currentEventIndex >= currentBehavior.events.length - 1) {
+        // Check if there is a next page
+        if (eventState.currentBehaviorIndex < eventState.behaviors.length - 1) {
+            console.log("End of page. Loading next page...");
+            eventState.currentBehaviorIndex++;
+            loadBehavior(eventState.behaviors[eventState.currentBehaviorIndex]);
+        } else {
+            console.log("End of all pages and events.");
+        }
             return;
         }
 
+    // Case 2: Play the next event on the current page
+    eventState.currentEventIndex++;
         const event = currentBehavior.events[eventState.currentEventIndex];
         playSingleEvent(event);
         updateControls();
     }
+
 
     function playPrev() {
-        const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
-        if (!currentBehavior || !currentBehavior.events) return;
+    // Case 1: Beginning of events for the current page
+    if (eventState.currentEventIndex <= 0) {
+        // Check if there is a previous page
+        if (eventState.currentBehaviorIndex > 0) {
+            console.log("Beginning of page. Loading previous page...");
+            eventState.currentBehaviorIndex--;
+            const prevBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
 
-        eventState.currentEventIndex--;
-        if (eventState.currentEventIndex < -1) {
+            // Set the event index to the last event on the previous page
+            eventState.currentEventIndex = prevBehavior.events.length;
+
+            loadBehavior(prevBehavior);
+        } else {
+            console.log("Beginning of all pages and events.");
+            // Do not go below index -1 for the first page
             eventState.currentEventIndex = -1;
-            console.log("Beginning of events for this page.");
             updateControls();
+        }
             return;
         }
 
-        const event = currentBehavior.events[eventState.currentEventIndex];
+    // Case 2: Play the previous event on the current page
+    eventState.currentEventIndex--;
+    const event = eventState.behaviors[eventState.currentBehaviorIndex].events[eventState.currentEventIndex];
         playSingleEvent(event);
         updateControls();
     }
-
     function updateControls() {
         const statusDiv = document.getElementById("status-display");
         if (statusDiv) {
             const currentBehavior = eventState.behaviors[eventState.currentBehaviorIndex];
             const eventCount = currentBehavior ? currentBehavior.events.length : 0;
-            statusDiv.textContent = `Page ${eventState.currentBehaviorIndex + 1}/${eventState.behaviors.length} | Event ${eventState.currentEventIndex + 1}/${eventCount}`;
+            statusDiv.textContent = `Page ${eventState.currentBehaviorIndex + 1}/${eventState.behaviors.length} | Step ${eventState.currentEventIndex + 1}/${eventCount}`;
         }
     }
 
@@ -302,7 +321,7 @@
         await loadBehavior(eventState.behaviors[eventState.currentBehaviorIndex]);
     }
 
-    async function autoPlay(events, contentWindow) {
+    async function autoPlay(events) {
         if (!events || !events.length) {
             console.warn("No events to replay.");
             return Promise.resolve();
@@ -313,21 +332,7 @@
                 const timeDelta = new Date(event.timestamp).getTime() - lastEventTime;
                 lastEventTime = new Date(event.timestamp).getTime();
                 setTimeout(() => {
-                    // playSingleEvent is not meant to be called here in auto mode. This is the issue.
-                    if (event.type === "click") {
-                        const clickEvent = new contentWindow.MouseEvent("click", {
-                            bubbles: true,
-                            clientX: event.coordinates.x,
-                            clientY: event.coordinates.y,
-                        });
-                        contentWindow.document.body.dispatchEvent(clickEvent);
-                    } else if (event.type === "scroll") {
-                        contentWindow.scrollTo({
-                            top: event.scrollY,
-                            left: 0,
-                            behavior: "smooth",
-                        });
-                    }
+                playSingleEvent(event);
                     if (index === events.length - 1) {
                         setTimeout(resolve, 500);
                     }
