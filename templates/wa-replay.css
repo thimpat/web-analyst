@@ -8,11 +8,26 @@ body, html {
     overflow: hidden;
 }
 
+.replay-text-zone {
+    position: absolute;
+    top: 12px;
+    left: 18px;
+}
+
 .replay-title {
     color: #aaa;
-    position: absolute;
-    top: 4px;
-    left: 18px;
+    display: inline-block;
+}
+
+.replay-description {
+    color: #c38863;
+    display: inline-block;
+}
+
+.replay-details {
+    color: #515151;
+    display: block;
+    margin: 4px 0;
 }
 
 .replay-iframe {

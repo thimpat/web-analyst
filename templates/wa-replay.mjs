@@ -9,7 +9,7 @@
         const urlObj = new URL(`${serverUrl}`, `${protocol}//${baseUrl}:${forcePort}`);
         serverUrl = urlObj.toString();
     }
-    console.log("wa-replay v1.02");
+    console.log("wa-replay v1.06");
 
     // -------------------------------------------------
     // Utility
@@ -64,7 +64,6 @@
      * @param event
      */
     function playSingleEvent(event) {
-        console.log("playSingleEvent", event);
 
         const iframe = document.getElementById("replay-iframe");
         if (!iframe || !iframe.contentWindow) {
@@ -74,7 +73,16 @@
 
         const contentWindow = iframe.contentWindow;
 
-        console.log("Playing event:", event.type);
+        setDescription(`[${event.type}]`);
+
+        const date = new Date(event.timestamp);
+
+        // const friendlyDate = date.toLocaleDateString();
+        // console.log(friendlyDate);
+
+        // Example 2: Friendly Date and Time (e.g., 9/4/2025, 10:57:37 AM)
+        const friendlyDateTime = date.toLocaleString();
+        setDetails(friendlyDateTime);
 
         if (event.type === "click") {
             let targetElement = null;
@@ -286,6 +294,24 @@
         }
     }
 
+    function setTitle(title) {
+        const replayDiv = document.getElementById("replay-title");
+        replayDiv.textContent = title;
+
+    }
+
+    function setDescription(description) {
+        const replayDiv = document.getElementById("replay-description");
+        replayDiv.textContent = description;
+
+    }
+
+    function setDetails(description) {
+        const replayDiv = document.getElementById("replay-details");
+        replayDiv.textContent = description;
+
+    }
+
     async function loadBehavior(behavior) {
         const iframe = document.getElementById("replay-iframe");
         iframe.src = behavior.visitedPage;
@@ -298,8 +324,7 @@
         // Update the content window reference
         eventState.iframeContentWindow = iframe.contentWindow;
 
-        const replayTitle = document.getElementById("replay-title");
-        replayTitle.textContent = behavior.visitedPage;
+        setTitle("Replayed Page: " + behavior.visitedPage);
 
         eventState.currentEventIndex = -1; // Reset event index for the new page
         updateControls();
@@ -435,7 +460,7 @@
         title.classList.add("wa-replay-title");
 
         const minimizeBtn = document.createElement("button");
-        minimizeBtn.innerHTML = "+";
+        minimizeBtn.innerHTML = "×";
         minimizeBtn.classList.add("wa-replay-minimize-btn");
         minimizeBtn.title = "Minimize";
 
@@ -515,61 +540,24 @@
             mainContainer.style.cursor = "grab";
         });
 
-        // Also make minimized icon draggable
-        let isIconDragging = false;
-        let iconDragOffsetX = 0;
-        let iconDragOffsetY = 0;
-
-        minimizedIcon.addEventListener("mousedown", (e) => {
-            isIconDragging = true;
-            iconDragOffsetX = e.clientX - minimizedIcon.getBoundingClientRect().left;
-            iconDragOffsetY = e.clientY - minimizedIcon.getBoundingClientRect().top;
-            minimizedIcon.style.cursor = "grabbing";
-            e.preventDefault();
-        });
-
-        document.addEventListener("mousemove", (e) => {
-            if (!isIconDragging) return;
-
-            const x = e.clientX - iconDragOffsetX;
-            const y = e.clientY - iconDragOffsetY;
-
-            // Keep within viewport boundaries
-            const maxX = window.innerWidth - minimizedIcon.offsetWidth;
-            const maxY = window.innerHeight - minimizedIcon.offsetHeight;
-
-            minimizedIcon.style.left = Math.max(0, Math.min(x, maxX)) + "px";
-            minimizedIcon.style.top = Math.max(0, Math.min(y, maxY)) + "px";
-            minimizedIcon.style.right = "auto"; // Reset right positioning
-        });
-
         document.addEventListener("mouseup", () => {
-            isIconDragging = false;
             minimizedIcon.style.cursor = "grab";
         });
 
-        // Toggle functionality
-        let isMinimized = false;
-
         minimizeBtn.addEventListener("click", () => {
-            isMinimized = true;
             contentContainer.style.display = "none";
             minimizedIcon.style.display = "block";
-            minimizeBtn.innerHTML = "+";
+            minimizeBtn.innerHTML = "×";
             minimizeBtn.title = "Restore";
-
-            // Position icon where the container was
-            const rect = mainContainer.getBoundingClientRect();
-            minimizedIcon.style.left = rect.left + "px";
-            minimizedIcon.style.top = rect.top + "px";
+            header.style.display = "none";
         });
 
         minimizedIcon.addEventListener("click", () => {
-            isMinimized = false;
             contentContainer.style.display = "block";
             minimizedIcon.style.display = "none";
-            minimizeBtn.innerHTML = "+";
+            minimizeBtn.innerHTML = "×";
             minimizeBtn.title = "Minimize";
+            header.style.display = "flex";
 
             // Position container where the icon was
             const rect = minimizedIcon.getBoundingClientRect();
@@ -669,7 +657,7 @@
 
                     // 🏁 Detect last event
                     if (index === sortedEvents.length - 1) {
-                        console.log("✅ Replay complete");
+                        setDetails("✅ Replay complete");
                         unblockUserInteraction();
                     }
                 }, delay);
@@ -683,16 +671,6 @@
 
 
     async function init() {
-
-        // document.addEventListener("keydown", function (event) {
-        //     const isCtrlR = event.altKey && event.key.toLowerCase() === "p";
-        //
-        //     if (isCtrlR) {
-        //         event.preventDefault();
-        //         console.log("🔁 CTRL + R pressed — starting replay");
-        //         replayEvents();
-        //     }
-        // });
 
         const list = await fetchRecordedEvents();
         generateLinks(list);
